@@ -4,6 +4,7 @@ import com.abbas.ecommerce.identity.dto.RegisterRequest;
 import com.abbas.ecommerce.identity.services.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -29,7 +30,9 @@ public class AuthController {
         return ResponseEntity.ok(token);
     }
 
+
     @GetMapping("/test")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> test(){
         return ResponseEntity.ok("JWT testten başarıyla geçti");
     }

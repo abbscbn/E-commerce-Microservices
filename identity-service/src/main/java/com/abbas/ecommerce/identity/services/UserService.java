@@ -14,7 +14,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,8 +50,9 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(password));
 
         // bütün herkes varsayılan olarak USER rolünde kaydedilir..
+
         Set<Role> roles= new HashSet<>();
-        roles.add(Role.ADMIN);
+        roles.add(Role.USER);
         user.setRoles(roles);
 
         User savedUser = userRepository.save(user);
@@ -72,8 +75,11 @@ public class UserService {
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet()));
 
+
         return token;
     }
+
+
 
 
 
