@@ -1,7 +1,10 @@
 package com.abbas.ecommerce.identity.controller;
 import com.abbas.ecommerce.identity.dto.LoginRequest;
 import com.abbas.ecommerce.identity.dto.RegisterRequest;
+import com.abbas.ecommerce.identity.jwt.JwtUtil;
+import com.abbas.ecommerce.identity.services.TokenBlacklistService;
 import com.abbas.ecommerce.identity.services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +18,10 @@ public class AuthController {
 
 
     private final UserService userService;
+
+    private final JwtUtil jwtUtil;
+
+    private final TokenBlacklistService tokenBlacklistService;
 
 
 
@@ -35,6 +42,19 @@ public class AuthController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> test(){
         return ResponseEntity.ok("JWT testten başarıyla geçti");
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            long expiration = jwtUtil.getExpirationMillis(token);
+            tokenBlacklistService.blacklistToken(token, expiration);
+        }
+
+        return ResponseEntity.ok("Logged out successfully");
     }
 }
 

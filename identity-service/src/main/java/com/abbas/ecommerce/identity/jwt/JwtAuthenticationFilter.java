@@ -1,6 +1,8 @@
 package com.abbas.ecommerce.identity.jwt;
 
 // Spring Framework & Spring Security
+import com.abbas.ecommerce.identity.services.TokenBlacklistService;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,15 +21,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
+@AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
-    }
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -52,6 +53,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // SecurityContext boşsa ve username varsa
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+            if (jwt != null) {
+                if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
+                    logger.warn("JWT blacklisted!");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                username = jwtUtil.extractUsername(jwt);
+            }
 
             if (jwtUtil.validateToken(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken =

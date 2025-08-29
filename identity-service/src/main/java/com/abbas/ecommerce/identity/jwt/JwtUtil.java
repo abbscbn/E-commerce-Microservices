@@ -55,6 +55,13 @@ public class JwtUtil {
         String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
+    // ✅ Token'ın kalan süresini milisaniye olarak döndürür
+    public long getExpirationMillis(String token){
+        Date expirationDate = getClaims(token).getExpiration();
+        long now = System.currentTimeMillis();
+        long diff = expirationDate.getTime() - now;
+        return diff > 0 ? diff : 0;
+    }
 
     private boolean isTokenExpired(String token) {
         return getClaims(token).getExpiration().before(new Date());
