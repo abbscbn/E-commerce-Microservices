@@ -29,11 +29,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+
+        String username = null;
+        String jwt = null;
+        String token= null;
+
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+             token=authHeader.substring(7);
+
+            try {
+                username = jwtUtil.extractUsername(token);
+            } catch (Exception e) {
+                logger.error("JWT geçersiz: " + e.getMessage());
+                throw new RuntimeException("JWT geçersiz:"); //BURADAKİ HATALRI YAKALA AŞAĞISI İÇİNDE HATA YAKALA
+            }
+        }
+
 
             if (jwtUtil.validateToken(token)) {
-                var username = jwtUtil.extractUsername(token);
+                 username = jwtUtil.extractUsername(token);
                 var roles = jwtUtil.extractRoles(token).stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
@@ -42,8 +57,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(username, null, roles);
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
-        }
 
         filterChain.doFilter(request, response);
+
+        }
+
     }
-}
+
