@@ -42,7 +42,8 @@ Identity Service, kullanıcı yönetimini sağlar.
 ### 📌 DTO’lar
 - `RegisterRequest`
 - `LoginRequest`
-
+- `RequestProduct`
+- `ResponseProduct`
 ---
 
 ## 📦 Product Service
