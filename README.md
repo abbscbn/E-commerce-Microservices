@@ -73,8 +73,8 @@ Tüm endpointler JWT ile korunur ve Redis blacklist kontrolü yapılır.
    ```
 5. Sağlık kontrolü için:
    ```http
-   http://localhost:8080/actuator/health   (Identity Service)
-   http://localhost:8081/actuator/health   (Product Service)
+   http://localhost:8080/actuator/health   (Identity Service )
+   http://localhost:8081/actuator/health   (Product Service )
    ```
 
 ---
