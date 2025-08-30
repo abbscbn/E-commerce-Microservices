@@ -39,12 +39,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         String username = null;
-        String jwt = null;
+        String token = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            jwt = authHeader.substring(7);
+            token = authHeader.substring(7);
             try {
-                username = jwtUtil.extractUsername(jwt);
+                username = jwtUtil.extractUsername(token);
             } catch (Exception e) {
                 logger.error("JWT geçersiz: " + e.getMessage());
             }
@@ -54,22 +54,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwt != null) {
-                if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
-                    logger.warn("JWT blacklisted!");
-                    filterChain.doFilter(request, response);
-                    return;
-                }
 
-                username = jwtUtil.extractUsername(jwt);
-            }
-
-            if (jwtUtil.validateToken(jwt, userDetails)) {
+            if (jwtUtil.validateToken(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities()
                         );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                    logger.warn("JWT blacklisted!");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

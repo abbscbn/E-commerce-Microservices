@@ -1,9 +1,11 @@
 package com.abbas.ecommerce.product.jwt;
 
+import com.abbas.ecommerce.product.services.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,13 +16,12 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 @Component
+@AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -31,7 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         String username = null;
-        String jwt = null;
         String token= null;
 
 
@@ -55,6 +55,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(username, null, roles);
+
+                if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                    logger.warn("JWT blacklisted!");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
 
