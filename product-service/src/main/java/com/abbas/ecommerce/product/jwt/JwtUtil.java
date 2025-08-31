@@ -3,13 +3,11 @@ package com.abbas.ecommerce.product.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
+
 
 @Component
 public class JwtUtil {
