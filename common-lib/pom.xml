@@ -19,6 +19,7 @@
     </properties>
 
     <dependencies>
+
         <!-- Lombok (sadece derleme zamanında kullanılır, runtime’a dahil edilmez) -->
         <dependency>
             <groupId>org.projectlombok</groupId>

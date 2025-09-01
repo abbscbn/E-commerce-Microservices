@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -44,6 +45,27 @@ public class OrderService {
 
         return savedOrder;
 
+    }
+
+    public List<Order> getAllOrders(){
+       return orderRepository.findAll();
+    }
+
+    public Order getOrderByUserId(Long userId){
+        Optional<Order> optOrder = orderRepository.findByUserId(userId);
+        if(optOrder.isEmpty()){
+            System.out.println("bulunamadı hata mesajı fırlat");
+            return null;
+        }
+        return optOrder.get();
 
     }
+
+    public void updateOrderStatus(Long orderId, String status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(status);
+        orderRepository.save(order);
+    }
+
 }

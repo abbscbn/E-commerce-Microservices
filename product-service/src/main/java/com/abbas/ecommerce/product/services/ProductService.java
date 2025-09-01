@@ -72,15 +72,50 @@ public class ProductService {
         return responseProduct;
     }
 
-    public List<ResponseProduct> getAllProducts(){
+    public  List<ResponseProduct> getAllProducts(){
         List<ResponseProduct> responseProducts= new ArrayList<>();
-        ResponseProduct responseProduct= new ResponseProduct();
+
         for(Product p: productRepository.findAll()){
+
+            ResponseProduct responseProduct= new ResponseProduct();
             BeanUtils.copyProperties(p,responseProduct);
+
             responseProducts.add(responseProduct);
         }
         return responseProducts;
 
+    }
+
+
+
+    public boolean checkProductStock(Long productId,Integer quality){
+        Optional<Product> optProduct = productRepository.findById(productId);
+
+        if(optProduct.isEmpty()){
+            System.out.println("ilgili product id ye ait product bulunamadı /// hata mesajı");
+            return false;
+        }
+        else{
+
+            if(optProduct.get().getStock()-quality>=0){
+                return true;
+            }
+            else {
+                return false;
+            }
+
+        }
+
+    }
+
+    public void setProductStockByProductId(Long productId,Integer quality){
+        Optional<Product> optProduct = productRepository.findById(productId);
+
+        if(optProduct.isPresent()){
+            Product product = optProduct.get();
+            product.setStock(product.getStock()-quality);
+            productRepository.save(product);
+        }
     }
 
 
