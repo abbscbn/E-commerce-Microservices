@@ -18,6 +18,7 @@ public class OrderFailedEventConsumer {
         event.getFailedItems().forEach(failedItem ->
                 System.out.println("Ürün ID: " + failedItem.getProductId() + " -> " + failedItem.getReason())
         );
+        orderService.updateOrderStatus(event.getOrderId(), "CANCELED");
     }
 
 

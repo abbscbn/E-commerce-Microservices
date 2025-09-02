@@ -5,6 +5,7 @@ import com.abbas.ecommerce.identity.jwt.JwtUtil;
 import com.abbas.ecommerce.identity.services.TokenBlacklistService;
 import com.abbas.ecommerce.identity.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,13 +27,13 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
         userService.registerUser(request.username(),request.email(),request.password());
         return ResponseEntity.ok("Kayıt başarılı!");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request) {
         String token = userService.login(request);
         return ResponseEntity.ok(token);
     }
