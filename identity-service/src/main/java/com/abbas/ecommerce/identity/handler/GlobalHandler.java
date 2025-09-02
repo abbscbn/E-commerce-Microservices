@@ -1,11 +1,14 @@
 package com.abbas.ecommerce.identity.handler;
 
+import com.abbas.ecommerce.common.exception.BaseException;
+import com.abbas.ecommerce.common.response.RootResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +24,7 @@ public class GlobalHandler {
     }
 
     @ExceptionHandler(value = {MethodArgumentNotValidException.class})
-    public ResponseEntity<Map<String, List<String>>> MethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException ex){
+    public ResponseEntity<RootResponse<Map<String, List<String>>>> MethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException ex, WebRequest webRequest){
 
         Map<String,List<String>> errorMapList= new HashMap<>();
 
@@ -39,12 +42,15 @@ public class GlobalHandler {
         }
 
 
-
-
-
-        return ResponseEntity.badRequest().body(errorMapList);
+        return ResponseEntity.badRequest().body(RootResponse.error(errorMapList,webRequest));
 
     }
+
+    @ExceptionHandler(value = {BaseException.class})
+    public ResponseEntity<RootResponse<String>> BaseExceptionHandler(BaseException ex, WebRequest webRequest){
+      return  ResponseEntity.badRequest().body(RootResponse.error(ex.getMessage(),webRequest));
+    }
+
 
 
 }

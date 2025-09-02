@@ -1,6 +1,9 @@
 package com.abbas.ecommerce.identity.jwt;
 
 // Spring Framework & Spring Security
+import com.abbas.ecommerce.common.exception.BaseException;
+import com.abbas.ecommerce.common.exception.ErrorMessage;
+import com.abbas.ecommerce.common.exception.ErrorMessageType;
 import com.abbas.ecommerce.identity.services.TokenBlacklistService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -47,6 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 username = jwtUtil.extractUsername(token);
             } catch (Exception e) {
                 logger.error("JWT geçersiz: " + e.getMessage());
+                throw new BaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,token));
             }
         }
 
@@ -64,6 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (tokenBlacklistService.isTokenBlacklisted(token)) {
                     logger.warn("JWT blacklisted!");
+
                     filterChain.doFilter(request, response);
                     return;
                 }
