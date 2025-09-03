@@ -1,5 +1,6 @@
 package com.abbas.ecommerce.identity.config;
 
+import com.abbas.ecommerce.identity.jwt.JwtAuthenticationEntryPoint;
 import com.abbas.ecommerce.identity.jwt.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,10 +26,12 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
     private final UserDetailsService userDetailsService;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter, UserDetailsService userDetailsService, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
         this.jwtFilter = jwtFilter;
         this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationEntryPoint=jwtAuthenticationEntryPoint;
     }
 
     @Bean
@@ -39,6 +42,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .and()
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

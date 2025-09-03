@@ -16,6 +16,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,7 +33,8 @@ public class UserService {
 
     private final JwtUtil jwtUtil;
 
-
+    //METHOD SEVİYESİNE AYARLANDI AMA İSTERSEK CLASS SEVİYESİNDE DE AYARLANABİLİR
+    @Transactional
     public User registerUser(String username, String email, String password){
 
         if(userRepository.existsByUsername(username)){
@@ -66,7 +68,7 @@ public class UserService {
         Optional<User> optUsername = userRepository.findByUsername(request.username());
 
         if(optUsername.isEmpty()){
-            throw new BaseException(new ErrorMessage(ErrorMessageType.USER_OR_PASSWORD_INCORECT, request.username()));
+            throw new BaseException(new ErrorMessage(ErrorMessageType.USER_NOT_FOUND, request.username()));
 
         }
 

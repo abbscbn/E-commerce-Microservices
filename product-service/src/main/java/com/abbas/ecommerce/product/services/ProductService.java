@@ -1,5 +1,8 @@
 package com.abbas.ecommerce.product.services;
 
+import com.abbas.ecommerce.common.exception.BaseException;
+import com.abbas.ecommerce.common.exception.ErrorMessage;
+import com.abbas.ecommerce.common.exception.ErrorMessageType;
 import com.abbas.ecommerce.product.dto.RequestProduct;
 import com.abbas.ecommerce.product.dto.ResponseProduct;
 import com.abbas.ecommerce.product.model.Product;
@@ -7,12 +10,14 @@ import com.abbas.ecommerce.product.repository.ProductRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class ProductService {
 
     @Autowired
@@ -38,8 +43,8 @@ public class ProductService {
         Optional<Product> optProduct = productRepository.findById(productId);
 
         if(optProduct.isEmpty()){
-            System.out.println("Product bulunamadı hatası fırlat burada");
-            return null;
+           throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND,productId.toString()));
+
         }
         Product product=optProduct.get();
 
@@ -65,7 +70,8 @@ public class ProductService {
         Optional<Product> optProduct = productRepository.findById(productId);
         if(optProduct.isEmpty()){
             System.out.println("Product Bulunamadı..");
-            return null;
+            throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND,productId.toString()));
+
         }
         Product product = optProduct.get();
         BeanUtils.copyProperties(product,responseProduct);
@@ -92,8 +98,8 @@ public class ProductService {
         Optional<Product> optProduct = productRepository.findById(productId);
 
         if(optProduct.isEmpty()){
-            System.out.println("ilgili product id ye ait product bulunamadı /// hata mesajı");
-            return false;
+            throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND,productId.toString()));
+
         }
         else{
 

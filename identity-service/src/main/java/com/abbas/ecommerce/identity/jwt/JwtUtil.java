@@ -1,6 +1,7 @@
 package com.abbas.ecommerce.identity.jwt;
 
 import com.abbas.ecommerce.identity.enumtype.Role;
+import io.jsonwebtoken.ClaimJwtException;
 import org.springframework.stereotype.Component;
 
 // Spring anotasyonları
@@ -40,22 +41,10 @@ public class JwtUtil {
                 .compact();
     }
 
-    // ✅ Kullanıcı adını token'dan al
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
-    // ✅ Roller claim’den alınır
-    public List<String> extractRoles(String token) {
-        return getClaims(token).get("roles", List.class);
-    }
-
-    // ✅ Token geçerli mi?
-    public boolean validateToken(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
-    }
-    // ✅ Token'ın kalan süresini milisaniye olarak döndürür
     public long getExpirationMillis(String token){
         Date expirationDate = getClaims(token).getExpiration();
         long now = System.currentTimeMillis();
@@ -63,14 +52,27 @@ public class JwtUtil {
         return diff > 0 ? diff : 0;
     }
 
+    public List<String> extractRoles(String token) {
+        return getClaims(token).get("roles", List.class);
+    }
+
+    public boolean validateToken(String token) {
+        return !isTokenExpired(token);
+    }
+
     private boolean isTokenExpired(String token) {
         return getClaims(token).getExpiration().before(new Date());
     }
 
     private Claims getClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(secret.getBytes())
-                .parseClaimsJws(token)
-                .getBody();
-    }
+        try {
+            return Jwts.parser()
+                    .setSigningKey(secret.getBytes())
+                    .parseClaimsJws(token)
+                    .getBody();
+        }
+        catch (ClaimJwtException e){
+            return e.getClaims();
+        }
+}
 }

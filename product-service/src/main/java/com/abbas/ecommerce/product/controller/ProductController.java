@@ -1,11 +1,13 @@
 package com.abbas.ecommerce.product.controller;
 
+import com.abbas.ecommerce.common.response.RootResponse;
 import com.abbas.ecommerce.product.dto.RequestProduct;
 import com.abbas.ecommerce.product.dto.ResponseProduct;
 import com.abbas.ecommerce.product.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 
 import java.util.List;
 
@@ -16,40 +18,36 @@ public class ProductController {
     @Autowired
     ProductService productService;
 
-    @GetMapping("/test")
-    public ResponseEntity<String> test(){
-      return  ResponseEntity.ok("Test başarılı");
-    }
 
     @PostMapping("/save")
-    public ResponseEntity<ResponseProduct> createProduct(@RequestBody RequestProduct request){
+    public ResponseEntity<RootResponse<ResponseProduct>> createProduct(@RequestBody RequestProduct request, WebRequest webRequest){
         ResponseProduct responseProduct = productService.createProduct(request);
 
-        return ResponseEntity.ok(responseProduct);
+        return ResponseEntity.ok(RootResponse.ok(responseProduct,webRequest));
 
     }
 
     @PutMapping("/update/{productId}")
-    public ResponseEntity<ResponseProduct> updateProduct(@RequestBody RequestProduct request,@PathVariable(name = "productId") Long productId){
+    public ResponseEntity<RootResponse<ResponseProduct>> updateProduct(@RequestBody RequestProduct request, @PathVariable(name = "productId") Long productId, WebRequest webRequest){
         ResponseProduct responseProduct = productService.updateProduct(request, productId);
-        return ResponseEntity.ok(responseProduct);
+        return ResponseEntity.ok(RootResponse.ok(responseProduct,webRequest));
     }
 
     @DeleteMapping("/delete/{productId}")
-    public ResponseEntity<String> deleteProductByProductId(@PathVariable(name = "productId") Long productId){
+    public ResponseEntity<RootResponse<String>> deleteProductByProductId(@PathVariable(name = "productId") Long productId, WebRequest webRequest){
         String info = productService.deleteProduct(productId);
-        return ResponseEntity.ok(info);
+        return ResponseEntity.ok(RootResponse.ok(info,webRequest));
 
     }
     @GetMapping("/get/{productId}")
-    public ResponseEntity<ResponseProduct> getProductByProductId(@PathVariable(name = "productId") Long productId){
+    public ResponseEntity<RootResponse<ResponseProduct>> getProductByProductId(@PathVariable(name = "productId") Long productId, WebRequest webRequest){
         ResponseProduct productByProductId = productService.getProductByProductId(productId);
-        return ResponseEntity.ok(productByProductId);
+        return ResponseEntity.ok(RootResponse.ok(productByProductId,webRequest));
     }
     @GetMapping("/get")
-    public ResponseEntity<List<ResponseProduct>> getAllProducts(){
+    public ResponseEntity<RootResponse<List<ResponseProduct>>> getAllProducts(WebRequest webRequest){
         List<ResponseProduct> allProducts = productService.getAllProducts();
-        return ResponseEntity.ok(allProducts);
+        return ResponseEntity.ok(RootResponse.ok(allProducts,webRequest));
     }
 
 

@@ -1,5 +1,6 @@
 package com.abbas.ecommerce.product.config;
 
+import com.abbas.ecommerce.product.jwt.JwtAuthenticationEntryPoint;
 import com.abbas.ecommerce.product.jwt.JwtAuthenticationFilter;
 
 
@@ -16,10 +17,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,
+                          JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
         this.jwtAuthFilter = jwtAuthFilter;
-
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
     }
 
     @Bean
@@ -28,8 +31,10 @@ public class SecurityConfig {
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
+                .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .and()
                 .authorizeHttpRequests()
-                .requestMatchers("/products/**").authenticated() // tüm product endpointleri auth gerekir
+                .requestMatchers("/products/**").authenticated()
                 .anyRequest().permitAll();
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

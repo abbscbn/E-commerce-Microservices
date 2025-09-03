@@ -68,7 +68,7 @@ public class RootResponse<T> {
         try {
             return InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
-            throw new BaseException(new ErrorMessage(ErrorMessageType.GENERAL_EXCEPTION,e.getMessage()));
+            throw new BaseException(new ErrorMessage(ErrorMessageType.GENERAL_EXCEPTION_IDENTITY,e.getMessage()));
         }
 
     }

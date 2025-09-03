@@ -1,8 +1,7 @@
 package com.abbas.ecommerce.product.jwt;
 
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.util.Date;
@@ -37,10 +36,15 @@ public class JwtUtil {
     }
 
     private Claims getClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(secret.getBytes())
-                .parseClaimsJws(token)
-                .getBody();
+       try {
+           return Jwts.parser()
+                   .setSigningKey(secret.getBytes())
+                   .parseClaimsJws(token)
+                   .getBody();
+       }
+       catch (ClaimJwtException e){
+           return e.getClaims();
+       }
     }
 }
 
