@@ -1,4 +1,4 @@
-package com.abbas.ecommerce.identity.handler;
+package com.abbas.ecommerce.common.handler;
 
 import com.abbas.ecommerce.common.exception.BaseException;
 import com.abbas.ecommerce.common.response.RootResponse;
@@ -19,8 +19,8 @@ import java.util.Map;
 public class GlobalHandler {
 
     public List<String> addMapValue(List<String> stringList, String value){
-      stringList.add(value);
-      return stringList;
+        stringList.add(value);
+        return stringList;
     }
 
     @ExceptionHandler(value = {MethodArgumentNotValidException.class})
@@ -48,9 +48,7 @@ public class GlobalHandler {
 
     @ExceptionHandler(value = {BaseException.class})
     public ResponseEntity<RootResponse<String>> BaseExceptionHandler(BaseException ex, WebRequest webRequest){
-      return  ResponseEntity.badRequest().body(RootResponse.error(ex.getMessage(),webRequest));
+        return  ResponseEntity.badRequest().body(RootResponse.error(ex.getMessage(),webRequest));
     }
-
-
 
 }
