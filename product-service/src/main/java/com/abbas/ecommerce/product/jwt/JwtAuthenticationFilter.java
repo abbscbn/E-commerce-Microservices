@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -24,69 +25,78 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
 
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-
-        String username = null;
-        String token= null;
-
         String authHeader = request.getHeader("Authorization");
+        String token = null;
 
-        if (authHeader == null) {
-            filterChain.doFilter(request, response);
-            return;
+
+
+    try{
+
+        token = authHeader.substring(7);
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            SecurityContextHolder.clearContext();
+            throw new AuthBaseException(
+                    new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, token)
+            );
         }
 
-   try {
-       if (authHeader != null && authHeader.startsWith("Bearer ")) {
-           token = authHeader.substring(7);
-       }
 
-       if(!jwtUtil.validateToken(token)){
-           logger.warn("JWT SÜRESİ DOLMUŞTUR");
-           SecurityContextHolder.clearContext();
-           request.setAttribute("TOKENEXPIRED", new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED, token));
+        // Doğrudan exception fırlat, zinciri bitir
+        if (!jwtUtil.validateToken(token)) {
+            SecurityContextHolder.clearContext();
+            throw new AuthBaseException(
+                    new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED, token)
+            );
+        }
 
-       }
-
-       if (tokenBlacklistService.isTokenBlacklisted(token)) {
-           logger.warn("JWT blacklisted!");
-           SecurityContextHolder.clearContext();
-           request.setAttribute("BLACKLIST", new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST, token));
-           filterChain.doFilter(request, response);
-           return;
-       }
-
-       if (jwtUtil.validateToken(token)) {
-           username = jwtUtil.extractUsername(token);
-           var roles = jwtUtil.extractRoles(token).stream()
-                   .map(SimpleGrantedAuthority::new)
-                   .collect(Collectors.toList());
-
-           UsernamePasswordAuthenticationToken authToken =
-                   new UsernamePasswordAuthenticationToken(username, null, roles);
+        if (tokenBlacklistService.isTokenBlacklisted(token)) {
+            SecurityContextHolder.clearContext();
+            throw new AuthBaseException(
+                    new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST, token)
+            );
+        }
 
 
 
-           SecurityContextHolder.getContext().setAuthentication(authToken);
-       }
-   }
+        // Token geçerli ise authentication nesnesi oluştur
+        String username = jwtUtil.extractUsername(token);
+        var roles = jwtUtil.extractRoles(token).stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
 
-   catch (ExpiredJwtException e){
-       logger.warn("Token süresi dolmuştur "+e.getMessage());
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(username, null, roles);
 
-   }
-   catch (Exception e){
-       logger.warn("Genel bir hata oluştu "+e.getMessage());
-   }
+        SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
+    }
 
+    catch (AuthBaseException e){
+
+        if(e.getErrorMessage().getErrorMessageType().getCode()==1007){
+            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED,authHeader));
+        }
+        else if(e.getErrorMessage().getErrorMessageType().getCode()==1008){
+
+            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST,authHeader));
+        }
+        else {
+            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
+        }
+
+    }
+    catch (Exception e){
+        System.out.println(e.getMessage());
+        throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
+    }
     }
 
 }

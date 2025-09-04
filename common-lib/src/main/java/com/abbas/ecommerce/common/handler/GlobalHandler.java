@@ -1,5 +1,6 @@
 package com.abbas.ecommerce.common.handler;
 
+import com.abbas.ecommerce.common.exception.AuthBaseException;
 import com.abbas.ecommerce.common.exception.BaseException;
 import com.abbas.ecommerce.common.response.RootResponse;
 import org.springframework.http.ResponseEntity;
