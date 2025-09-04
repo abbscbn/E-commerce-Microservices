@@ -1,10 +1,9 @@
 package com.abbas.ecommerce.identity.jwt;
 
-// Spring Framework & Spring Security
+import com.abbas.ecommerce.common.exception.AuthBaseException;
 import com.abbas.ecommerce.common.exception.ErrorMessage;
 import com.abbas.ecommerce.common.exception.ErrorMessageType;
 import com.abbas.ecommerce.identity.services.TokenBlacklistService;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +24,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        // JWT filtre sadece /auth/logout veya başka korunan endpointlerde çalışsın
+        return path.equals("/auth/login") || path.equals("/auth/register");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -32,62 +37,72 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-
-        String username = null;
-        String token= null;
-
         String authHeader = request.getHeader("Authorization");
+        String token = null;
 
-        if (authHeader == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
-        try {
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
+
+        try{
+
+
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                SecurityContextHolder.clearContext();
+                throw new AuthBaseException(
+                        new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, token)
+                );
             }
 
-            if(!jwtUtil.validateToken(token)){
-                logger.warn("JWT SÜRESİ DOLMUŞTUR");
+            token = authHeader.substring(7);
 
-                request.setAttribute("TOKENEXPIRED", new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED, token));
-
+            // Doğrudan exception fırlat, zinciri bitir
+            if (!jwtUtil.validateToken(token)) {
+                SecurityContextHolder.clearContext();
+                throw new AuthBaseException(
+                        new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED, token)
+                );
             }
 
             if (tokenBlacklistService.isTokenBlacklisted(token)) {
-                logger.warn("JWT blacklisted!");
-
-                request.setAttribute("BLACKLIST", new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST, token));
-                filterChain.doFilter(request, response);
-                return;
+                SecurityContextHolder.clearContext();
+                throw new AuthBaseException(
+                        new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST, token)
+                );
             }
 
-            if (jwtUtil.validateToken(token)) {
-                username = jwtUtil.extractUsername(token);
-                var roles = jwtUtil.extractRoles(token).stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
-
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(username, null, roles);
 
 
+            // Token geçerli ise authentication nesnesi oluştur
+            String username = jwtUtil.extractUsername(token);
+            var roles = jwtUtil.extractRoles(token).stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(username, null, roles);
+
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            filterChain.doFilter(request, response);
         }
 
-        catch (ExpiredJwtException e){
-            logger.warn("Token süresi dolmuştur "+e.getMessage());
+        catch (AuthBaseException e){
+
+            if(e.getErrorMessage().getErrorMessageType().getCode()==1007){
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED,authHeader));
+            }
+            else if(e.getErrorMessage().getErrorMessageType().getCode()==1008){
+
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST,authHeader));
+            }
+            else {
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
+            }
 
         }
         catch (Exception e){
-            logger.warn("Genel bir hata oluştu "+e.getMessage());
+            System.out.println(e.getMessage());
+            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
         }
-
-        filterChain.doFilter(request, response);
-
     }
 
 }
