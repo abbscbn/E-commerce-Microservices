@@ -27,7 +27,7 @@ public class OrderController {
         return ResponseEntity.ok(RootResponse.ok(orderService.createOrder(userId, items),webRequest));
     }
     @GetMapping("/get/{userId}")
-    public ResponseEntity<RootResponse<Order>> getOrderByUserId (@PathVariable(name = "userId") Long userId, WebRequest webRequest){
+    public ResponseEntity<RootResponse<List<Order>>> getOrderByUserId (@PathVariable(name = "userId") Long userId, WebRequest webRequest){
         return ResponseEntity.ok(RootResponse.ok(orderService.getOrderByUserId(userId),webRequest));
     }
 }
