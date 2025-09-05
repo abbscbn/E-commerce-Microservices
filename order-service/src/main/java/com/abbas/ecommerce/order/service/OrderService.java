@@ -1,6 +1,7 @@
 package com.abbas.ecommerce.order.service;
 
 import com.abbas.ecommerce.common.event.OrderCreatedEvent;
+import com.abbas.ecommerce.order.model.FailedMessage;
 import com.abbas.ecommerce.order.model.Order;
 import com.abbas.ecommerce.order.model.OrderItem;
 import com.abbas.ecommerce.order.repository.OrderRepository;
@@ -8,6 +9,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -61,10 +63,12 @@ public class OrderService {
 
     }
 
-    public void updateOrderStatus(Long orderId, String status) {
+    public void updateOrderStatus(Long orderId, String status, List<FailedMessage> failedMessages) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         order.setStatus(status);
+        failedMessages.forEach(failedMessage -> failedMessage.setOrder(order));
+        order.setFailedMessages(failedMessages);
         orderRepository.save(order);
     }
 

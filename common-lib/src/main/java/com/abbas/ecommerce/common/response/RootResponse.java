@@ -37,7 +37,7 @@ public class RootResponse<T> {
         RootResponse<T> rootResponse= new RootResponse<>();
         rootResponse.setResult(true);
         rootResponse.setStatus(200);
-        rootResponse.setPath(request.getDescription(false));
+        rootResponse.setPath(request.getDescription(false).substring(4));
         rootResponse.setHostName(getHostName());
         rootResponse.setLocalDateTime(LocalDateTime.now());
         rootResponse.setData(data);
@@ -52,7 +52,7 @@ public class RootResponse<T> {
         ApiError<T> apiError= new ApiError<>();
         rootResponse.setResult(false);
         rootResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-        rootResponse.setPath(request.getDescription(false));
+        rootResponse.setPath(request.getDescription(false).substring(4));
         rootResponse.setHostName(getHostName());
         rootResponse.setLocalDateTime(LocalDateTime.now());
         rootResponse.setData(null);

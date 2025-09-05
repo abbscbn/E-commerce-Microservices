@@ -36,7 +36,7 @@ public class OrderEventConsumer {
             boolean inStock = productService.checkProductStock(item.getProductId(), item.getQuantity());
             if (!inStock) {
                 System.out.println(item.getProductId() + " id li ürün stokta mevcut değil");
-                failedItems.add(new OrderFailedEvent.FailedItem(item.getProductId(), "Out of stock"));
+                failedItems.add(new OrderFailedEvent.FailedItem(item.getProductId(), "Yeterli Stok Bulunmamaktadır"));
             }
         }
 

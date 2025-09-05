@@ -1,5 +1,8 @@
 package com.abbas.ecommerce.order.jwt;
 
+import com.abbas.ecommerce.common.exception.AuthBaseException;
+import com.abbas.ecommerce.common.exception.ErrorMessage;
+import com.abbas.ecommerce.common.exception.ErrorMessageType;
 import com.abbas.ecommerce.order.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,7 +14,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 import java.util.stream.Collectors;
 
@@ -30,25 +32,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-
-        String username = null;
-        String token= null;
+        String token = null;
 
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token=authHeader.substring(7);
 
-            try {
-                username = jwtUtil.extractUsername(token);
-            } catch (Exception e) {
-                logger.error("JWT geçersiz: " + e.getMessage());
-                throw new RuntimeException("JWT geçersiz:"); //BURADAKİ HATALRI YAKALA AŞAĞISI İÇİNDE HATA YAKALA
+        try{
+
+
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                SecurityContextHolder.clearContext();
+                throw new AuthBaseException(
+                        new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, token)
+                );
             }
-        }
+
+            token = authHeader.substring(7);
+
+            // Doğrudan exception fırlat, zinciri bitir
+            if (!jwtUtil.validateToken(token)) {
+                SecurityContextHolder.clearContext();
+                throw new AuthBaseException(
+                        new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED, token)
+                );
+            }
+
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                SecurityContextHolder.clearContext();
+                throw new AuthBaseException(
+                        new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST, token)
+                );
+            }
 
 
-        if (jwtUtil.validateToken(token)) {
-            username = jwtUtil.extractUsername(token);
+
+            // Token geçerli ise authentication nesnesi oluştur
+            String username = jwtUtil.extractUsername(token);
             var roles = jwtUtil.extractRoles(token).stream()
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
@@ -56,17 +74,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(username, null, roles);
 
-            if (tokenBlacklistService.isTokenBlacklisted(token)) {
-                logger.warn("JWT blacklisted!");
-                filterChain.doFilter(request, response);
-                return;
-            }
-
             SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            filterChain.doFilter(request, response);
         }
 
-        filterChain.doFilter(request, response);
+        catch (AuthBaseException e){
 
+            if(e.getErrorMessage().getErrorMessageType().getCode()==1007){
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED,authHeader));
+            }
+            else if(e.getErrorMessage().getErrorMessageType().getCode()==1008){
+
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST,authHeader));
+            }
+            else {
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
+            }
+
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
+            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
+        }
     }
 
 }

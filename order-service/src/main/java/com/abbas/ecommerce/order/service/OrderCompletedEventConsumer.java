@@ -15,6 +15,6 @@ public class OrderCompletedEventConsumer {
     @RabbitListener(queues = RabbitConfig.ORDER_COMPLETED_QUEUE)
     public void consumeOrderCompletedEvent(OrderCompletedEvent event) {
         System.out.println("✅ Order Completed Event received: " + event);
-        orderService.updateOrderStatus(event.getOrderId(), "COMPLETED");
+        orderService.updateOrderStatus(event.getOrderId(), "COMPLETED",null);
     }
 }
