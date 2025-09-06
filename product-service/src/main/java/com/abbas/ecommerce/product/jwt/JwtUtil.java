@@ -2,8 +2,11 @@ package com.abbas.ecommerce.product.jwt;
 
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.security.Key;
 import java.util.Date;
 import java.util.List;
 
@@ -36,15 +39,17 @@ public class JwtUtil {
     }
 
     private Claims getClaims(String token) {
-       try {
-           return Jwts.parser()
-                   .setSigningKey(secret.getBytes())
-                   .parseClaimsJws(token)
-                   .getBody();
-       }
-       catch (ClaimJwtException e){
-           return e.getClaims();
-       }
+        Key key = Keys.hmacShaKeyFor(secret.getBytes()); // güvenli key objesi
+        try{
+            return Jwts.parserBuilder()
+                    .setSigningKey(key)  // secret string değil, Key objesi
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        }
+        catch (ClaimJwtException e){
+            return  e.getClaims();
+        }
     }
 }
 

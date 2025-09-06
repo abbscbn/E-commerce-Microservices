@@ -44,8 +44,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/logout").authenticated()
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new ExceptionTranslationFilter(jwtAuthenticationEntryPoint), JwtAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
 
 
         return http.build();

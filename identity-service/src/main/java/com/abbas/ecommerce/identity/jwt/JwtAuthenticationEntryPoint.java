@@ -7,6 +7,8 @@ import com.abbas.ecommerce.common.response.RootResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -15,11 +17,12 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import java.io.IOException;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     @Override
     public void commence(HttpServletRequest request,
@@ -31,20 +34,16 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
         WebRequest webRequest = new ServletWebRequest(request);
 
-        // Eğer AuthBaseException geldiyse detaylı hata döndür
+        String errorMsg;
+
         if (authException instanceof AuthBaseException abe) {
             ErrorMessage errorMessage = abe.getErrorMessage();
-            RootResponse<String> error = RootResponse.error(
-                    errorMessage != null ? errorMessage.preparedErrorMessage() : abe.getMessage(),
-                    webRequest
-            );
-            response.getWriter().write(objectMapper.writeValueAsString(error));
-            return;
+            errorMsg = errorMessage != null ? errorMessage.preparedErrorMessage() : abe.getMessage();
+        } else {
+            errorMsg = new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, "").preparedErrorMessage();
         }
 
-        // Fallback: Diğer hata tipleri için genel hata mesajı
-        ErrorMessage errorMessage = new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, "");
-        RootResponse<String> error = RootResponse.error(errorMessage.preparedErrorMessage(), webRequest);
+        RootResponse<String> error = RootResponse.error(errorMsg, webRequest);
         response.getWriter().write(objectMapper.writeValueAsString(error));
     }
 }

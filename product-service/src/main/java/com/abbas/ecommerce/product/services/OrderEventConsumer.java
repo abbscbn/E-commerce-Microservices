@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,8 +34,9 @@ public class OrderEventConsumer {
 
         // Önce tüm ürünleri kontrol et
         for (OrderCreatedEvent.OrderItemDto item : event.getItems()) {
-            boolean inStock = productService.checkProductStock(item.getProductId(), item.getQuantity());
-            if (!inStock) {
+            Map checkProduct = productService.checkProduct(item.getProductId(), item.getQuantity());
+            /// BURADA KALDIN DEVAM ET
+            if (false) {
                 System.out.println(item.getProductId() + " id li ürün stokta mevcut değil");
                 failedItems.add(new OrderFailedEvent.FailedItem(item.getProductId(), "Yeterli Stok Bulunmamaktadır"));
             }

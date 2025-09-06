@@ -36,8 +36,8 @@ public class SecurityConfig {
                         .requestMatchers("/products/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new org.springframework.security.web.access.ExceptionTranslationFilter(jwtAuthenticationEntryPoint), JwtAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }

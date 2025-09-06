@@ -8,6 +8,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,12 +18,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -30,71 +34,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-        String token = null;
 
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, null));
+            }
 
+            String token = authHeader.substring(7);
 
-    try{
+            if (!jwtUtil.validateToken(token)) {
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED, token));
+            }
 
-        token = authHeader.substring(7);
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST, token));
+            }
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // Token geçerli → authentication oluştur
+            String username = jwtUtil.extractUsername(token);
+            var roles = jwtUtil.extractRoles(token).stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(username, null, roles);
+
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            filterChain.doFilter(request, response);
+
+        } catch (AuthBaseException e) {
             SecurityContextHolder.clearContext();
-            throw new AuthBaseException(
-                    new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, token)
-            );
-        }
-
-
-        // Doğrudan exception fırlat, zinciri bitir
-        if (!jwtUtil.validateToken(token)) {
+            // EntryPoint'i direkt çağırıyoruz
+            jwtAuthenticationEntryPoint.commence(request, response, e);
+        } catch (Exception e) {
             SecurityContextHolder.clearContext();
-            throw new AuthBaseException(
-                    new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED, token)
-            );
+            jwtAuthenticationEntryPoint.commence(request, response,
+                    new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, authHeader)));
         }
-
-        if (tokenBlacklistService.isTokenBlacklisted(token)) {
-            SecurityContextHolder.clearContext();
-            throw new AuthBaseException(
-                    new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST, token)
-            );
-        }
-
-
-
-        // Token geçerli ise authentication nesnesi oluştur
-        String username = jwtUtil.extractUsername(token);
-        var roles = jwtUtil.extractRoles(token).stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(username, null, roles);
-
-        SecurityContextHolder.getContext().setAuthentication(authToken);
-
-        filterChain.doFilter(request, response);
     }
-
-    catch (AuthBaseException e){
-
-        if(e.getErrorMessage().getErrorMessageType().getCode()==1007){
-            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_EXPIRED,authHeader));
-        }
-        else if(e.getErrorMessage().getErrorMessageType().getCode()==1008){
-
-            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_BLACKLIST,authHeader));
-        }
-        else {
-            throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
-        }
-
-    }
-    catch (Exception e){
-        System.out.println(e.getMessage());
-        throw new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID,authHeader));
-    }
-    }
-
 }

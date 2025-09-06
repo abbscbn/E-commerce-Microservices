@@ -75,7 +75,7 @@ public class OrderService {
 
     public void updateOrderStatus(Long orderId, String status, List<FailedMessage> failedMessages) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new BaseException(new ErrorMessage(ErrorMessageType.ORDER_NOT_FOUND,orderId.toString())));
         order.setStatus(status);
         if(failedMessages!=null){
             failedMessages.forEach(failedMessage -> failedMessage.setOrder(order));

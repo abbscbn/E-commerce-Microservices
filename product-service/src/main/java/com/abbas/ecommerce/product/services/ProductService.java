@@ -7,15 +7,15 @@ import com.abbas.ecommerce.product.dto.RequestProduct;
 import com.abbas.ecommerce.product.dto.ResponseProduct;
 import com.abbas.ecommerce.product.model.Product;
 import com.abbas.ecommerce.product.repository.ProductRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
+@Slf4j
 @Service
 @Transactional
 public class ProductService {
@@ -23,10 +23,10 @@ public class ProductService {
     @Autowired
     ProductRepository productRepository;
 
-    public ResponseProduct createProduct(RequestProduct request){
+    public ResponseProduct createProduct(RequestProduct request) {
 
-        Product product= new Product();
-        ResponseProduct responseProduct= new ResponseProduct();
+        Product product = new Product();
+        ResponseProduct responseProduct = new ResponseProduct();
 
         product.setName(request.name());
         product.setDescription(request.description());
@@ -35,18 +35,19 @@ public class ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-        BeanUtils.copyProperties(savedProduct,responseProduct);
+        BeanUtils.copyProperties(savedProduct, responseProduct);
         return responseProduct;
     }
-    public ResponseProduct updateProduct(RequestProduct request, Long productId){
-        ResponseProduct responseProduct= new ResponseProduct();
+
+    public ResponseProduct updateProduct(RequestProduct request, Long productId) {
+        ResponseProduct responseProduct = new ResponseProduct();
         Optional<Product> optProduct = productRepository.findById(productId);
 
-        if(optProduct.isEmpty()){
-           throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND,productId.toString()));
+        if (optProduct.isEmpty()) {
+            throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND, productId.toString()));
 
         }
-        Product product=optProduct.get();
+        Product product = optProduct.get();
 
         product.setName(request.name());
         product.setDescription(request.description());
@@ -55,36 +56,35 @@ public class ProductService {
 
         Product updatedProduct = productRepository.save(product);
 
-        BeanUtils.copyProperties(updatedProduct,responseProduct);
+        BeanUtils.copyProperties(updatedProduct, responseProduct);
 
         return responseProduct;
     }
 
-    public String deleteProduct(Long productId){
+    public String deleteProduct(Long productId) {
+        productRepository.findById(productId).orElseThrow(() -> new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND, productId.toString())));
         productRepository.deleteById(productId);
         return "Silme Başarılı";
     }
 
-    public ResponseProduct getProductByProductId(Long productId){
-        ResponseProduct responseProduct= new ResponseProduct();
+    public ResponseProduct getProductByProductId(Long productId) {
+        ResponseProduct responseProduct = new ResponseProduct();
         Optional<Product> optProduct = productRepository.findById(productId);
-        if(optProduct.isEmpty()){
-            System.out.println("Product Bulunamadı..");
-            throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND,productId.toString()));
-
+        if (optProduct.isEmpty()) {
+            throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND, productId.toString()));
         }
         Product product = optProduct.get();
-        BeanUtils.copyProperties(product,responseProduct);
+        BeanUtils.copyProperties(product, responseProduct);
         return responseProduct;
     }
 
-    public  List<ResponseProduct> getAllProducts(){
-        List<ResponseProduct> responseProducts= new ArrayList<>();
+    public List<ResponseProduct> getAllProducts() {
+        List<ResponseProduct> responseProducts = new ArrayList<>();
 
-        for(Product p: productRepository.findAll()){
+        for (Product p : productRepository.findAll()) {
 
-            ResponseProduct responseProduct= new ResponseProduct();
-            BeanUtils.copyProperties(p,responseProduct);
+            ResponseProduct responseProduct = new ResponseProduct();
+            BeanUtils.copyProperties(p, responseProduct);
 
             responseProducts.add(responseProduct);
         }
@@ -93,33 +93,40 @@ public class ProductService {
     }
 
 
-
-    public boolean checkProductStock(Long productId,Integer quality){
+    public Map<Boolean, String> checkProduct(Long productId, Integer quality) {
+        Map<Boolean, String> booleanStringMap = new HashMap<>();
         Optional<Product> optProduct = productRepository.findById(productId);
 
-        if(optProduct.isEmpty()){
-            throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND,productId.toString()));
+        try {
+            if (optProduct.isEmpty()) {
+                throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND, productId.toString()));
 
-        }
-        else{
+            } else {
 
-            if(optProduct.get().getStock()-quality>=0){
-                return true;
+                if (optProduct.get().getStock() - quality >= 0) {
+                     booleanStringMap.put(true, "STOK YETERLİ");
+                    return booleanStringMap;
+
+                } else {
+                     booleanStringMap.put(true, "STOK YETERSİZ");
+                    return booleanStringMap;
+                }
+
             }
-            else {
-                return false;
-            }
-
+        } catch (BaseException e) {
+            log.info(productId.toString() + " id li ürün bulunamadı");
+             booleanStringMap.put(false, productId.toString() + " id li ürün bulunamadı");
+             return booleanStringMap;
         }
 
     }
 
-    public void setProductStockByProductId(Long productId,Integer quality){
+    public void setProductStockByProductId(Long productId, Integer quality) {
         Optional<Product> optProduct = productRepository.findById(productId);
 
-        if(optProduct.isPresent()){
+        if (optProduct.isPresent()) {
             Product product = optProduct.get();
-            product.setStock(product.getStock()-quality);
+            product.setStock(product.getStock() - quality);
             productRepository.save(product);
         }
     }

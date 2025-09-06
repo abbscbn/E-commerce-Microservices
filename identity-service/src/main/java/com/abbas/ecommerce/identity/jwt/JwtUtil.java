@@ -2,6 +2,7 @@ package com.abbas.ecommerce.identity.jwt;
 
 import com.abbas.ecommerce.identity.enumtype.Role;
 import io.jsonwebtoken.ClaimJwtException;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 // Spring anotasyonları
@@ -14,6 +15,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 // Java standart kütüphaneleri
+import java.security.Key;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -65,14 +67,16 @@ public class JwtUtil {
     }
 
     private Claims getClaims(String token) {
-        try {
-            return Jwts.parser()
-                    .setSigningKey(secret.getBytes())
+        Key key = Keys.hmacShaKeyFor(secret.getBytes()); // güvenli key objesi
+        try{
+            return Jwts.parserBuilder()
+                    .setSigningKey(key)  // secret string değil, Key objesi
+                    .build()
                     .parseClaimsJws(token)
                     .getBody();
         }
         catch (ClaimJwtException e){
-            return e.getClaims();
+            return  e.getClaims();
         }
-}
+    }
 }
