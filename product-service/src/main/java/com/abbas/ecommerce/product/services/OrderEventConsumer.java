@@ -4,7 +4,6 @@ import com.abbas.ecommerce.common.event.OrderCompletedEvent;
 import com.abbas.ecommerce.common.event.OrderCreatedEvent;
 import com.abbas.ecommerce.common.event.OrderFailedEvent;
 import com.abbas.ecommerce.product.config.RabbitConfig;
-import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class OrderEventConsumer {
@@ -34,11 +31,12 @@ public class OrderEventConsumer {
 
         // Önce tüm ürünleri kontrol et
         for (OrderCreatedEvent.OrderItemDto item : event.getItems()) {
-            Map checkProduct = productService.checkProduct(item.getProductId(), item.getQuantity());
-            /// BURADA KALDIN DEVAM ET
-            if (false) {
-                System.out.println(item.getProductId() + " id li ürün stokta mevcut değil");
-                failedItems.add(new OrderFailedEvent.FailedItem(item.getProductId(), "Yeterli Stok Bulunmamaktadır"));
+
+
+            if (!productService.checkProduct(item.getProductId(), item.getQuantity()).isCheck()) {
+
+                failedItems.add(new OrderFailedEvent.FailedItem(item.getProductId(), productService.checkProduct(item.getProductId(), item.getQuantity()).getDesc()));
+
             }
         }
 
@@ -55,7 +53,6 @@ public class OrderEventConsumer {
 
         // Tüm ürünler varsa stok düş
         event.getItems().forEach(item -> {
-            System.out.println(item.getProductId() + " id li ürün " + item.getQuantity() + " adet alınabilir");
             productService.setProductStockByProductId(item.getProductId(), item.getQuantity());
         });
 

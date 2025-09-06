@@ -93,8 +93,8 @@ public class ProductService {
     }
 
 
-    public Map<Boolean, String> checkProduct(Long productId, Integer quality) {
-        Map<Boolean, String> booleanStringMap = new HashMap<>();
+    public CheckProductModel checkProduct(Long productId, Integer quality) {
+        CheckProductModel checkProductModel = new CheckProductModel();
         Optional<Product> optProduct = productRepository.findById(productId);
 
         try {
@@ -104,19 +104,22 @@ public class ProductService {
             } else {
 
                 if (optProduct.get().getStock() - quality >= 0) {
-                     booleanStringMap.put(true, "STOK YETERLİ");
-                    return booleanStringMap;
+                    checkProductModel.setCheck(true);
+                    checkProductModel.setDesc(null);
+                    return checkProductModel;
 
                 } else {
-                     booleanStringMap.put(true, "STOK YETERSİZ");
-                    return booleanStringMap;
+                    checkProductModel.setCheck(false);
+                    checkProductModel.setDesc("STOK YETERSİZ MEVCUT MİKTAR: " + optProduct.get().getStock());
+                    return checkProductModel;
                 }
 
             }
         } catch (BaseException e) {
-            log.info(productId.toString() + " id li ürün bulunamadı");
-             booleanStringMap.put(false, productId.toString() + " id li ürün bulunamadı");
-             return booleanStringMap;
+            checkProductModel.setCheck(false);
+            checkProductModel.setDesc("İLGİLİ PRODUCT ID BULUNAMADI PRODUCTID: : " + productId.toString());
+
+            return checkProductModel;
         }
 
     }
