@@ -8,8 +8,10 @@ import com.abbas.ecommerce.order.model.FailedMessage;
 import com.abbas.ecommerce.order.model.Order;
 import com.abbas.ecommerce.order.model.OrderItem;
 import com.abbas.ecommerce.order.repository.OrderRepository;
+import jakarta.persistence.LockModeType;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -54,9 +56,6 @@ public class OrderService {
 
     }
 
-    public List<Order> getAllOrders(){
-       return orderRepository.findAll();
-    }
 
     public List<Order> getOrderByUserId(Long userId){
 
@@ -73,11 +72,23 @@ public class OrderService {
 
     }
 
+    public List<Order> getAllOrders(){
+        List<Order> allOrders = orderRepository.findAll();
+        if(allOrders.isEmpty()){
+            throw new BaseException(new ErrorMessage(ErrorMessageType.ORDER_NOT_FOUND,"Kayıtlı hiç bir order bulunmamaktadır"));
+
+        }
+
+        return allOrders;
+    }
+
+    @Transactional
     public void updateOrderStatus(Long orderId, String status, List<FailedMessage> failedMessages) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(ErrorMessageType.ORDER_NOT_FOUND,orderId.toString())));
         order.setStatus(status);
         if(failedMessages!=null){
+            order.setFailedMessages(failedMessages.stream().toList());
             failedMessages.forEach(failedMessage -> failedMessage.setOrder(order));
         }
         order.setFailedMessages(failedMessages);

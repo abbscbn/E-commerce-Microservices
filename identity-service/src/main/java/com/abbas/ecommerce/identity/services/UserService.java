@@ -35,17 +35,17 @@ public class UserService {
 
     //METHOD SEVİYESİNE AYARLANDI AMA İSTERSEK CLASS SEVİYESİNDE DE AYARLANABİLİR
     @Transactional
-    public User registerUser(String username, String email, String password){
+    public User registerUser(String username, String email, String password) {
 
-        if(userRepository.existsByUsername(username)){
-            throw new BaseException(new ErrorMessage(ErrorMessageType.USERNAME_ALREADY_EXIST,username)); ///ileride düzenlenecek....
+        if (userRepository.existsByUsername(username)) {
+            throw new BaseException(new ErrorMessage(ErrorMessageType.USERNAME_ALREADY_EXIST, username)); ///ileride düzenlenecek....
         }
 
-        if(userRepository.existsByEmail(email)){
-            throw new BaseException(new ErrorMessage(ErrorMessageType.EMAIL_ALREADY_EXIST,email));
+        if (userRepository.existsByEmail(email)) {
+            throw new BaseException(new ErrorMessage(ErrorMessageType.EMAIL_ALREADY_EXIST, email));
         }
 
-        User user= new User();
+        User user = new User();
 
         user.setUsername(username);
         user.setEmail(email);
@@ -53,7 +53,7 @@ public class UserService {
 
         // bütün herkes varsayılan olarak USER rolünde kaydedilir..
 
-        Set<Role> roles= new HashSet<>();
+        Set<Role> roles = new HashSet<>();
         roles.add(Role.USER);
         user.setRoles(roles);
 
@@ -63,16 +63,16 @@ public class UserService {
 
     }
 
-    public String login(LoginRequest request){
+    public String login(LoginRequest request) {
 
         Optional<User> optUsername = userRepository.findByUsername(request.username());
 
-        if(optUsername.isEmpty()){
+        if (optUsername.isEmpty()) {
             throw new BaseException(new ErrorMessage(ErrorMessageType.USER_NOT_FOUND, request.username()));
 
         }
 
-        if(!passwordEncoder.matches(request.password(),optUsername.get().getPassword())){
+        if (!passwordEncoder.matches(request.password(), optUsername.get().getPassword())) {
 
             throw new BaseException(new ErrorMessage(ErrorMessageType.USER_OR_PASSWORD_INCORECT, request.username()));
         }
@@ -92,14 +92,16 @@ public class UserService {
                         .collect(Collectors.toSet()));
 
 
-
-
         return token;
     }
 
-
-
-
+    public boolean checkUserByUserId(Long userId){
+        Optional<User> optUser = userRepository.findById(userId);
+        if(optUser.isEmpty()){
+            return false;
+        }
+        return true;
+    }
 
 
 }

@@ -94,6 +94,7 @@ public class ProductService {
 
 
     public CheckProductModel checkProduct(Long productId, Integer quality) {
+
         CheckProductModel checkProductModel = new CheckProductModel();
         Optional<Product> optProduct = productRepository.findById(productId);
 

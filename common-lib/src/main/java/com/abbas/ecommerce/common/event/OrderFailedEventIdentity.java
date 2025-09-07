@@ -4,21 +4,19 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderCreatedEvent{
+public class OrderFailedEventIdentity{
     private Long orderId;
-    private Long userId;
-    private List<OrderItemDto> items; // productId, quantity
+    private OrderFailedEventIdentity.FailedItem failedItems; // ❌ başarısız olan ürünlerin listesi
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class OrderItemDto{
-        private Long productId;
-        private Integer quantity;
+    public static class FailedItem {
+        private Long userId;
+        private String reason;
     }
+
 }
