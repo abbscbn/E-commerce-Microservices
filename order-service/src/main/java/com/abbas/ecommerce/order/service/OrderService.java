@@ -1,14 +1,14 @@
 package com.abbas.ecommerce.order.service;
 
-import com.abbas.ecommerce.common.event.OrderCreatedEvent;
+import com.abbas.ecommerce.common.event.ProductValidationFailedEvent.FailedItem;
+import org.springframework.context.ApplicationEventPublisher;
+import com.abbas.ecommerce.order.domain.OrderCreatedDomainEvent;
 import com.abbas.ecommerce.common.exception.BaseException;
 import com.abbas.ecommerce.common.exception.ErrorMessage;
 import com.abbas.ecommerce.common.exception.ErrorMessageType;
-import com.abbas.ecommerce.order.model.FailedMessage;
 import com.abbas.ecommerce.order.model.Order;
 import com.abbas.ecommerce.order.model.OrderItem;
 import com.abbas.ecommerce.order.repository.OrderRepository;
-import jakarta.persistence.LockModeType;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +17,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class OrderService {
 
-    private OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
 
-    private OrderEventPublisher orderEventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
+    @Transactional
     public Order createOrder(Long userId, List<OrderItem> items){
 
         double totelPrice=items.stream().
@@ -43,14 +45,14 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Event yayınla
-        List<OrderCreatedEvent.OrderItemDto> eventItems = items.stream()
-                .map(i -> new OrderCreatedEvent.OrderItemDto(i.getProductId(), i.getQuantity()))
-                .toList();
+        // -----> AFTER_COMMIT’te publish edilecek domain event:
+        List<OrderCreatedDomainEvent.Item> eventItems = items.stream()
+                .map(it -> new OrderCreatedDomainEvent.Item(it.getProductId(), it.getQuantity()))
+                .collect(Collectors.toList());
 
-        OrderCreatedEvent event = new OrderCreatedEvent(savedOrder.getId(), userId, eventItems);
-        orderEventPublisher.publishOrderCreatedEvent(event);
-
+        eventPublisher.publishEvent(
+                new OrderCreatedDomainEvent(savedOrder.getId(), savedOrder.getUserId(), eventItems)
+        );
 
         return savedOrder;
 
@@ -83,16 +85,42 @@ public class OrderService {
     }
 
     @Transactional
-    public void updateOrderStatus(Long orderId, String status, List<FailedMessage> failedMessages) {
-        Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new BaseException(new ErrorMessage(ErrorMessageType.ORDER_NOT_FOUND,orderId.toString())));
-        order.setStatus(status);
-        if(failedMessages!=null){
-            order.setFailedMessages(failedMessages.stream().toList());
-            failedMessages.forEach(failedMessage -> failedMessage.setOrder(order));
+    public void updateUserValidation(Long orderId, boolean success, String reason) {
+        Order order = orderRepository.findByIdForUpdate(orderId).orElseThrow();
+
+        if (!success) {
+            order.setStatus("FAILED");
+            order.addFailedMessage(order.getUserId(), null, "User validation failed: " + reason);
+        } else {
+            order.markUserValidated();
         }
-        order.setFailedMessages(failedMessages);
+
+        finalizeOrderIfReady(order);
         orderRepository.save(order);
     }
+
+    @Transactional
+    public void updateProductValidation(Long orderId, boolean success, List<FailedItem> failedItems) {
+        Order order = orderRepository.findByIdForUpdate(orderId).orElseThrow();
+
+        if (!success) {
+            order.setStatus("FAILED");
+            failedItems.forEach(item ->
+                    order.addFailedMessage(null, item.getProductId(), item.getReason())
+            );
+        } else {
+            order.markProductValidated();
+        }
+
+        finalizeOrderIfReady(order);
+        orderRepository.save(order);
+    }
+
+    private void finalizeOrderIfReady(Order order) {
+        if (order.isUserValidated() && order.isProductValidated() && "PENDING".equals(order.getStatus())) {
+            order.setStatus("CONFIRMED");
+        }
+    }
+
 
 }

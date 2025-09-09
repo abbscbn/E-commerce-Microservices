@@ -4,21 +4,22 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class OrderFailedEvent {
+@AllArgsConstructor
+public class ProductValidationFailedEvent implements Serializable {
+
     private Long orderId;
-    private Long userId;
     private List<FailedItem> failedItems;
 
     @Data
-    @AllArgsConstructor
     @NoArgsConstructor
-    public static class FailedItem {
+    @AllArgsConstructor
+    public static class FailedItem implements Serializable {
         private Long productId;
-        private String reason;
+        private String reason; // örn: "STOK YETERSİZ MEVCUT MİKTAR: 5"
     }
 }

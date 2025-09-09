@@ -1,9 +1,9 @@
 package com.abbas.ecommerce.order.config;
 
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -13,81 +13,78 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String ORDER_EXCHANGE = "order-exchange";
+    public static final String ORDER_EVENTS_EXCHANGE = "order.events";
 
-    //orderdan gelen evente göre identity den hata mesajı
+    // Routing keys
+    public static final String RK_USER_VALIDATE = "identity.user.validate";
 
-    public static final String ORDER_FAILED_QUEUE_IDENTITY = "order-failed-queue-identity";
-    public static final String ORDER_FAILED_ROUTING_KEY_IDENTITY = "order.failed.identity";
+    public static final String RK_PRODUCT_VALIDATE = "product.validate";
 
-    // Sipariş oluşturma
-    public static final String ORDER_QUEUE = "order-queue";
-    public static final String ORDER_ROUTING_KEY = "order.created";
+    public static final String RK_USER_VALIDATION_SUCCEEDED = "order.user.validation.succeeded";
+    public static final String RK_USER_VALIDATION_FAILED = "order.user.validation.failed";
 
-    // Sipariş başarısız olursa
-    public static final String ORDER_FAILED_QUEUE = "order-failed-queue";
-    public static final String ORDER_FAILED_ROUTING_KEY = "order.failed";
+    public static final String RK_PRODUCT_VALIDATION_SUCCEEDED = "order.product.validation.succeeded";
+    public static final String RK_PRODUCT_VALIDATION_FAILED = "order.product.validation.failed";
 
-    public static final String ORDER_COMPLETED_QUEUE = "order-completed-queue";
-    public static final String ORDER_COMPLETED_ROUTING_KEY = "order.completed";
+    // Queues
+    public static final String USER_VALIDATION_RESULT_QUEUE = "order.user.validation.result.q";
+    public static final String PRODUCT_VALIDATION_RESULT_QUEUE = "order.product.validation.result.q";
 
-    // Başarısız olursa identity
+    // 1 Exchange
     @Bean
-    public Queue orderFailedQueueIdentity() {
-        return new Queue(ORDER_FAILED_QUEUE_IDENTITY, true);
+    public TopicExchange orderEventsExchange() {
+        return new TopicExchange(ORDER_EVENTS_EXCHANGE, true, false);
+    }
+
+    // 2 Queues
+    @Bean
+    public Queue userValidationResultQueue() {
+        return new Queue(USER_VALIDATION_RESULT_QUEUE, true);
     }
 
     @Bean
-    public Binding orderFailedBindingIdentity(Queue orderFailedQueueIdentity, DirectExchange orderExchange) {
-        return BindingBuilder.bind(orderFailedQueueIdentity).to(orderExchange).with(ORDER_FAILED_ROUTING_KEY_IDENTITY);
+    public Queue productValidationResultQueue() {
+        return new Queue(PRODUCT_VALIDATION_RESULT_QUEUE, true);
+    }
+
+    // 3 Bindings
+    @Bean
+    public Binding bindUserValidationSucceededQueue(Queue userValidationResultQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(userValidationResultQueue)
+                .to(orderEventsExchange)
+                .with(RK_USER_VALIDATION_SUCCEEDED);
     }
 
     @Bean
-    public Queue orderCompletedQueue() {
-        return new Queue(ORDER_COMPLETED_QUEUE, true);
+    public Binding bindUserValidationFailedQueue(Queue userValidationResultQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(userValidationResultQueue)
+                .to(orderEventsExchange)
+                .with(RK_USER_VALIDATION_FAILED);
     }
 
     @Bean
-    public Binding orderCompletedBinding(Queue orderCompletedQueue, DirectExchange orderExchange) {
-        return BindingBuilder.bind(orderCompletedQueue).to(orderExchange).with(ORDER_COMPLETED_ROUTING_KEY);
+    public Binding bindProductValidationSucceededQueue(Queue productValidationResultQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(productValidationResultQueue)
+                .to(orderEventsExchange)
+                .with(RK_PRODUCT_VALIDATION_SUCCEEDED);
     }
 
     @Bean
-    public DirectExchange orderExchange() {
-        return new DirectExchange(ORDER_EXCHANGE);
-    }
-
-    // Başarılı sipariş kuyruğu
-    @Bean
-    public Queue orderQueue() {
-        return new Queue(ORDER_QUEUE, true);
+    public Binding bindProductValidationFailedQueue(Queue productValidationResultQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(productValidationResultQueue)
+                .to(orderEventsExchange)
+                .with(RK_PRODUCT_VALIDATION_FAILED);
     }
 
     @Bean
-    public Binding orderBinding(Queue orderQueue, DirectExchange orderExchange) {
-        return BindingBuilder.bind(orderQueue).to(orderExchange).with(ORDER_ROUTING_KEY);
-    }
-
-    // Başarısız sipariş kuyruğu
-    @Bean
-    public Queue orderFailedQueue() {
-        return new Queue(ORDER_FAILED_QUEUE, true);
-    }
-
-    @Bean
-    public Binding orderFailedBinding(Queue orderFailedQueue, DirectExchange orderExchange) {
-        return BindingBuilder.bind(orderFailedQueue).to(orderExchange).with(ORDER_FAILED_ROUTING_KEY);
-    }
-
-    @Bean
-    public Jackson2JsonMessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter();
-    }
-
-    @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, Jackson2JsonMessageConverter messageConverter) {
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, Jackson2JsonMessageConverter converter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(messageConverter);
+        template.setMessageConverter(converter);
         return template;
+    }
+
+    @Bean
+    public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
+        return new Jackson2JsonMessageConverter();
     }
 }

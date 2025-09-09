@@ -4,13 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderCompletedEvent {
+public class UserValidationSucceededEvent {
     private Long orderId;
     private Long userId;
-    private List<Long> productIds;
 }

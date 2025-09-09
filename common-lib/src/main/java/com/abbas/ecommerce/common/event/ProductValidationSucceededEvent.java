@@ -4,21 +4,23 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class OrderCreatedEvent {
+@AllArgsConstructor
+public class ProductValidationSucceededEvent implements Serializable {
+
     private Long orderId;
-    private Long userId;
-    private List<OrderItem> items;
+    private List<Item> items;
 
     @Data
-    @AllArgsConstructor
     @NoArgsConstructor
-    public static class OrderItem {
+    @AllArgsConstructor
+    public static class Item implements Serializable {
         private Long productId;
         private int quantity;
+
     }
 }

@@ -44,4 +44,28 @@ public class Order {
 
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createDate;
+
+    private boolean userValidated = false;
+
+    private boolean productValidated = false;
+
+    public void markUserValidated() {
+        this.userValidated = true;
+    }
+
+    public void markProductValidated() {
+        this.productValidated = true;
+    }
+
+    public void addFailedMessage(Long userId, Long productId, String message) {
+        if (failedMessages != null) {
+            FailedMessage fm = FailedMessage.builder()
+                    .userId(userId)
+                    .productId(productId)
+                    .message(message)
+                    .order(this)
+                    .build();
+            this.failedMessages.add(fm);
+        }
+    }
 }

@@ -17,6 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Optional<Order>> findByUserId(Long userId);
     // senkronizasyon için özel tanımlanmıştır
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT o FROM Order o WHERE o.id = :id")
-    Optional<Order> findByIdForUpdate(@Param("id") Long id);
+    @Query("SELECT o FROM Order o WHERE o.id = :orderId")
+    Optional<Order> findByIdForUpdate(@Param("orderId") Long orderId);
 }
