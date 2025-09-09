@@ -26,9 +26,17 @@ public class RabbitConfig {
     public static final String RK_PRODUCT_VALIDATION_SUCCEEDED = "order.product.validation.succeeded";
     public static final String RK_PRODUCT_VALIDATION_FAILED = "order.product.validation.failed";
 
-    // Queues
-    public static final String USER_VALIDATION_RESULT_QUEUE = "order.user.validation.result.q";
-    public static final String PRODUCT_VALIDATION_RESULT_QUEUE = "order.product.validation.result.q";
+    // Queues //
+
+    //USER VALİD Queues
+    public static final String USER_VALIDATION_SUCCEEDED_RESULT_QUEUE="order.user.validation.succeeded.q";
+    public static final String USER_VALIDATION_FAILED_RESULT_QUEUE="order.user.validation.failed.q";
+    //PRODUCT VALİD Queues
+    public static final String PRODUCT_VALIDATION_SUCCEEDED_RESULT_QUEUE = "order.product.validation.succeeded.q";
+    public static final String PRODUCT_VALIDATION_FAILED_RESULT_QUEUE = "order.product.validation.failed.q";
+
+
+
 
     // 1 Exchange
     @Bean
@@ -38,40 +46,48 @@ public class RabbitConfig {
 
     // 2 Queues
     @Bean
-    public Queue userValidationResultQueue() {
-        return new Queue(USER_VALIDATION_RESULT_QUEUE, true);
+    public Queue userValidationResultSuccessQueue() {
+        return new Queue(USER_VALIDATION_SUCCEEDED_RESULT_QUEUE, true);
+    }
+    @Bean
+    public Queue userValidationResultFailedQueue() {
+        return new Queue(USER_VALIDATION_FAILED_RESULT_QUEUE, true);
     }
 
     @Bean
-    public Queue productValidationResultQueue() {
-        return new Queue(PRODUCT_VALIDATION_RESULT_QUEUE, true);
+    public Queue productValidationResulSuccesstQueue() {
+        return new Queue(PRODUCT_VALIDATION_SUCCEEDED_RESULT_QUEUE, true);
+    }
+    @Bean
+    public Queue productValidationResulFailedtQueue() {
+        return new Queue(PRODUCT_VALIDATION_FAILED_RESULT_QUEUE, true);
     }
 
     // 3 Bindings
     @Bean
-    public Binding bindUserValidationSucceededQueue(Queue userValidationResultQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(userValidationResultQueue)
+    public Binding bindUserValidationSucceededQueue(Queue userValidationResultSuccessQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(userValidationResultSuccessQueue)
                 .to(orderEventsExchange)
                 .with(RK_USER_VALIDATION_SUCCEEDED);
     }
 
     @Bean
-    public Binding bindUserValidationFailedQueue(Queue userValidationResultQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(userValidationResultQueue)
+    public Binding bindUserValidationFailedQueue(Queue userValidationResultFailedQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(userValidationResultFailedQueue)
                 .to(orderEventsExchange)
                 .with(RK_USER_VALIDATION_FAILED);
     }
 
     @Bean
-    public Binding bindProductValidationSucceededQueue(Queue productValidationResultQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(productValidationResultQueue)
+    public Binding bindProductValidationSucceededQueue(Queue productValidationResulSuccesstQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(productValidationResulSuccesstQueue)
                 .to(orderEventsExchange)
                 .with(RK_PRODUCT_VALIDATION_SUCCEEDED);
     }
 
     @Bean
-    public Binding bindProductValidationFailedQueue(Queue productValidationResultQueue, TopicExchange orderEventsExchange) {
-        return BindingBuilder.bind(productValidationResultQueue)
+    public Binding bindProductValidationFailedQueue(Queue productValidationResulFailedtQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(productValidationResulFailedtQueue)
                 .to(orderEventsExchange)
                 .with(RK_PRODUCT_VALIDATION_FAILED);
     }
