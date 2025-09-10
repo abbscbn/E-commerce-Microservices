@@ -27,8 +27,7 @@ public class OrderEventPublisher {
     }
 
     public void publishStockCheck(Long orderId, List<OrderCreatedDomainEvent.Item> items) {
-        List<Long> productIds= new ArrayList<>();
-        items.forEach(item -> productIds.add(item.getProductId()));
+
         List<ProductValidationEvent.Item> productValidationEventItems= new ArrayList<>();
 
         items.forEach(item -> productValidationEventItems.add(new ProductValidationEvent.Item(item.getProductId(), item.getQuantity())));
@@ -36,4 +35,6 @@ public class OrderEventPublisher {
 
         rabbitTemplate.convertAndSend(ORDER_EVENTS_EXCHANGE,RK_PRODUCT_VALIDATE, evt);
     }
+
+
 }

@@ -14,8 +14,17 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfigProduct {
 
     public static final String ORDER_EVENTS_EXCHANGE = "order.events";
+
     public static final String PRODUCT_VALIDATION_QUEUE = "product.validate.q";
     public static final String PRODUCT_VALIDATION_ROUTING_KEY = "product.validate";
+
+    //QUEUE ROLLBACK
+
+    public static final String ORDER_ROLLBACK_STOCK_QUEUE="rollback.stock.queue";
+
+    //ROUTING KEY
+
+    public static final String ORDER_ROLLBACK_STOCK_ROUTING_KEY="rollback.stock";
 
     // 1 Exchange
     @Bean
@@ -29,12 +38,24 @@ public class RabbitConfigProduct {
         return new Queue(PRODUCT_VALIDATION_QUEUE, true);
     }
 
+    @Bean
+    public Queue productRollBackQueue() {
+        return new Queue(ORDER_ROLLBACK_STOCK_QUEUE, true);
+    }
+
     // 3 Binding (Exchange -> Queue)
     @Bean
     public Binding bindProductValidationQueue(Queue productValidationQueue, TopicExchange orderEventsExchange) {
         return BindingBuilder.bind(productValidationQueue)
                 .to(orderEventsExchange)
                 .with(PRODUCT_VALIDATION_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding bindProductRollBackQueue(Queue productRollBackQueue, TopicExchange orderEventsExchange) {
+        return BindingBuilder.bind(productRollBackQueue)
+                .to(orderEventsExchange)
+                .with(ORDER_ROLLBACK_STOCK_ROUTING_KEY);
     }
 
     @Bean

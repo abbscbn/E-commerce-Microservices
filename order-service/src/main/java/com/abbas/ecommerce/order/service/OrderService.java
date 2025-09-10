@@ -1,6 +1,7 @@
 package com.abbas.ecommerce.order.service;
 
 import com.abbas.ecommerce.common.event.ProductValidationFailedEvent.FailedItem;
+import com.abbas.ecommerce.order.domain.OrderRollbackDomainEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import com.abbas.ecommerce.order.domain.OrderCreatedDomainEvent;
 import com.abbas.ecommerce.common.exception.BaseException;
@@ -120,7 +121,16 @@ public class OrderService {
         if (order.isUserValidated() && order.isProductValidated() && "PENDING".equals(order.getStatus())) {
             order.setStatus("CONFIRMED");
         }
+
+        // rollback sadece: product OK && user FAIL
+        if ("FAILED".equals(order.getStatus())
+                && order.isProductValidated()
+                && !order.isUserValidated()) {
+
+            eventPublisher.publishEvent(new OrderRollbackDomainEvent(order.getId()));
+        }
+    }
     }
 
 
-}
+

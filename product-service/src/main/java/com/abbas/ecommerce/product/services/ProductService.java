@@ -135,5 +135,15 @@ public class ProductService {
         }
     }
 
+    @Transactional
+    public void increaseStock(Long productId, Integer quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found with id " + productId));
+
+        product.setStock(product.getStock() + quantity);
+
+        productRepository.save(product);
+    }
+
 
 }

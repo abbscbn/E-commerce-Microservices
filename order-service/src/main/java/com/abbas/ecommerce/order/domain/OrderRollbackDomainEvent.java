@@ -1,4 +1,4 @@
-package com.abbas.ecommerce.common.event;
+package com.abbas.ecommerce.order.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class StockCheckFailedEvent {
+public class OrderRollbackDomainEvent {
     private Long orderId;
-    private Long productId;
-    private String reason;
 }
