@@ -1,5 +1,6 @@
 package com.abbas.ecommerce.order.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
 import jakarta.persistence.*;
 
@@ -20,6 +21,7 @@ public class OrderBasketItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "basket_id")
+    @JsonBackReference
     private OrderBasket basket;
 
     // getter, setter
