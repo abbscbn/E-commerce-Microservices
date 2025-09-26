@@ -37,9 +37,9 @@ public class OrderBasketController {
       return ResponseEntity.ok(RootResponse.ok(orderBasketService.saveBasket(basket),webRequest));
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<RootResponse<OrderBasket>> updateBasket(@PathVariable Long id, OrderBasket updatedBasket, WebRequest webRequest){
-     return ResponseEntity.ok(RootResponse.ok(orderBasketService.updateBasket(id,updatedBasket),webRequest));
+    @PutMapping("/update")
+    public ResponseEntity<RootResponse<OrderBasket>> updateBasket(@RequestBody OrderBasket updatedBasket, WebRequest webRequest){
+     return ResponseEntity.ok(RootResponse.ok(orderBasketService.updateBasket(updatedBasket),webRequest));
     }
 
     @DeleteMapping("/delete/{id}")

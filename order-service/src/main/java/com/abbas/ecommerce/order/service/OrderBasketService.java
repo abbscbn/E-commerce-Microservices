@@ -1,9 +1,13 @@
 package com.abbas.ecommerce.order.service;
 
+import com.abbas.ecommerce.common.exception.BaseException;
+import com.abbas.ecommerce.common.exception.ErrorMessage;
+import com.abbas.ecommerce.common.exception.ErrorMessageType;
 import com.abbas.ecommerce.order.model.OrderBasket;
 import com.abbas.ecommerce.order.model.OrderBasketItem;
 import com.abbas.ecommerce.order.repository.OrderBasketRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,13 +62,18 @@ public class OrderBasketService {
     }
 
 
-    public OrderBasket updateBasket(Long id, OrderBasket updatedBasket) {
-        OrderBasket existing = basketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Basket not found with id: " + id));
+    public OrderBasket updateBasket(OrderBasket updatedBasket) {
+        OrderBasket existing = basketRepository.findByUserId(updatedBasket.getUserId())
+                .orElseThrow(() -> new BaseException(new ErrorMessage(ErrorMessageType.ORDER_BASKET_NOT_FOUND_BY_USERID,updatedBasket.getUserId().toString())));
 
-        // basit örnek: sadece items
+        // eski item’ları sil
         existing.getItems().clear();
-        existing.getItems().addAll(updatedBasket.getItems());
+
+        // yeni item’ları ekle
+        for (OrderBasketItem item : updatedBasket.getItems()) {
+            item.setBasket(existing);
+            existing.getItems().add(item);
+        }
 
         return basketRepository.save(existing);
     }

@@ -71,6 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwtAuthenticationEntryPoint.commence(request, response, e);
         }
         catch (Exception e) {
+
             SecurityContextHolder.clearContext();
             jwtAuthenticationEntryPoint.commence(request, response,
                     new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, e.getMessage())));
