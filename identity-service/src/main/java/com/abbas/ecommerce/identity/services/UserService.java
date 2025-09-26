@@ -4,6 +4,7 @@ import com.abbas.ecommerce.common.exception.BaseException;
 import com.abbas.ecommerce.common.exception.ErrorMessage;
 import com.abbas.ecommerce.common.exception.ErrorMessageType;
 import com.abbas.ecommerce.identity.dto.LoginRequest;
+import com.abbas.ecommerce.identity.dto.LoginResponse;
 import com.abbas.ecommerce.identity.enumtype.Role;
 import com.abbas.ecommerce.identity.jwt.JwtUtil;
 import com.abbas.ecommerce.identity.model.User;
@@ -35,7 +36,7 @@ public class UserService {
 
     //METHOD SEVİYESİNE AYARLANDI AMA İSTERSEK CLASS SEVİYESİNDE DE AYARLANABİLİR
     @Transactional
-    public User registerUser(String username, String email, String password) {
+    public String registerUser(String username, String email, String password) {
 
         if (userRepository.existsByUsername(username)) {
             throw new BaseException(new ErrorMessage(ErrorMessageType.USERNAME_ALREADY_EXIST, username)); ///ileride düzenlenecek....
@@ -45,6 +46,7 @@ public class UserService {
             throw new BaseException(new ErrorMessage(ErrorMessageType.EMAIL_ALREADY_EXIST, email));
         }
 
+        String response;
         User user = new User();
 
         user.setUsername(username);
@@ -59,13 +61,18 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        return savedUser;
+       response="Kayıt Başarılı";
+
+
+        return response;
 
     }
 
-    public String login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
 
         Optional<User> optUsername = userRepository.findByUsername(request.username());
+
+        LoginResponse loginResponse= new LoginResponse();
 
         if (optUsername.isEmpty()) {
             throw new BaseException(new ErrorMessage(ErrorMessageType.USER_NOT_FOUND, request.username()));
@@ -91,8 +98,12 @@ public class UserService {
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet()));
 
+        loginResponse.setId(optUsername.get().getId());
+        loginResponse.setUsername(optUsername.get().getUsername());
+        loginResponse.setEmail(optUsername.get().getEmail());
+        loginResponse.setToken(token);
 
-        return token;
+        return loginResponse;
     }
 
     public boolean checkUserByUserId(Long userId){
