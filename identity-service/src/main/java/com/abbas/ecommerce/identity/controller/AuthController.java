@@ -62,5 +62,10 @@ public class AuthController {
 
         return ResponseEntity.ok(RootResponse.ok("Çıkış Yapıldı",webRequest));
     }
+
+    @PostMapping("/admin")
+    public ResponseEntity<RootResponse<LoginResponse>> adminLogin(@Valid @RequestBody LoginRequest request, WebRequest webRequest){
+        return ResponseEntity.ok(RootResponse.ok(userService.adminLogin(request),webRequest));
+    }
 }
 

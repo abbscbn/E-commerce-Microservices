@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
         // JWT filtre sadece /auth/logout veya başka korunan endpointlerde çalışsın
-        return path.equals("/auth/login") || path.equals("/auth/register");
+        return path.equals("/auth/login") || path.equals("/auth/register") || path.equals("/auth/admin");
     }
 
     @Override

@@ -106,6 +106,50 @@ public class UserService {
         return loginResponse;
     }
 
+    public LoginResponse adminLogin(LoginRequest request){
+
+        Optional<User> optUsername = userRepository.findByUsername(request.username());
+
+
+        LoginResponse loginResponse= new LoginResponse();
+
+        if (optUsername.isEmpty()) {
+            throw new BaseException(new ErrorMessage(ErrorMessageType.USER_NOT_FOUND, request.username()));
+
+        }
+
+
+        if(!optUsername.get().getRoles().contains(Role.ADMIN)){
+            throw  new BaseException(new ErrorMessage(ErrorMessageType.ADMIN_AUTH_ERROR,""));
+        }
+
+        if (!passwordEncoder.matches(request.password(), optUsername.get().getPassword())) {
+
+            throw new BaseException(new ErrorMessage(ErrorMessageType.ADMIN_PASSWORD_ERROR, ""));
+        }
+
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.username(), request.password())
+        );
+
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+
+        String token = jwtUtil.generateToken(userDetails.getUsername(),
+                userDetails.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toSet()));
+
+        loginResponse.setId(optUsername.get().getId());
+        loginResponse.setUsername(optUsername.get().getUsername());
+        loginResponse.setEmail(optUsername.get().getEmail());
+        loginResponse.setToken(token);
+        return loginResponse;
+
+    }
+
     public boolean checkUserByUserId(Long userId){
         Optional<User> optUser = userRepository.findById(userId);
         if(optUser.isEmpty()){
