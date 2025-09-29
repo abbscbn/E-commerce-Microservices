@@ -103,6 +103,13 @@ public class UserService {
         loginResponse.setEmail(optUsername.get().getEmail());
         loginResponse.setToken(token);
 
+        Set<String> roles = optUsername.get().getRoles().stream()
+                .map(Role::name) // USER, ADMIN
+                .collect(Collectors.toSet());
+
+        loginResponse.setRoles(roles);
+
+
         return loginResponse;
     }
 
@@ -146,6 +153,12 @@ public class UserService {
         loginResponse.setUsername(optUsername.get().getUsername());
         loginResponse.setEmail(optUsername.get().getEmail());
         loginResponse.setToken(token);
+
+        Set<String> roles = optUsername.get().getRoles().stream()
+                .map(Role::name) // USER, ADMIN
+                .collect(Collectors.toSet());
+
+        loginResponse.setRoles(roles);
         return loginResponse;
 
     }
