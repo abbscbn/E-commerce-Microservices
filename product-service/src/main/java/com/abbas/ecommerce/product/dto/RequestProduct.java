@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
+import org.springframework.web.multipart.MultipartFile;
 
 public record RequestProduct(
 
@@ -16,6 +17,10 @@ public record RequestProduct(
         String description,
         @NotNull(message = "stok sayısı null olamaz")
         @PositiveOrZero(message = "stok sayısı en az 0 olabilir")
-        Integer stock
+        Integer stock,
+
+        MultipartFile desktopImage,  // frontend’den resim dosyası gelir
+        MultipartFile tabletImage,
+        MultipartFile mobileImage
 ) {
 }

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -21,15 +22,21 @@ public class ProductController {
 
 
     @PostMapping("/save")
-    public ResponseEntity<RootResponse<ResponseProduct>> createProduct(@Valid @RequestBody RequestProduct request, WebRequest webRequest) {
+    public ResponseEntity<RootResponse<ResponseProduct>> createProduct(
+            @ModelAttribute RequestProduct request,  // MultipartFile için @ModelAttribute
+            WebRequest webRequest
+    ) throws IOException {
+
         ResponseProduct responseProduct = productService.createProduct(request);
-
         return ResponseEntity.ok(RootResponse.ok(responseProduct, webRequest));
-
     }
 
     @PutMapping("/update/{productId}")
-    public ResponseEntity<RootResponse<ResponseProduct>> updateProduct(@Valid @RequestBody RequestProduct request, @PathVariable(name = "productId") Long productId, WebRequest webRequest) {
+    public ResponseEntity<RootResponse<ResponseProduct>> updateProduct(
+            @PathVariable Long productId,
+            @ModelAttribute RequestProduct request,
+            WebRequest webRequest
+    ) throws IOException {
         ResponseProduct responseProduct = productService.updateProduct(request, productId);
         return ResponseEntity.ok(RootResponse.ok(responseProduct, webRequest));
     }

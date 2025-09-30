@@ -15,4 +15,6 @@ public class ResponseProduct {
     private Double price;
     private String description;
     private Integer stock;
+    // ProductImage DTO
+    private ResponseProductImage image;
 }

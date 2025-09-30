@@ -28,5 +28,15 @@ public class Product {
     @Column(nullable = false)
     private Integer stock;
 
+    // Her ürünün tek bir ProductImage nesnesi var
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private ProductImage image;
+
+    public void setImage(ProductImage image) {
+        this.image = image;
+        if (image != null) {
+            image.setProduct(this); // ilişkiyi ters yönde de kuruyor
+        }
+    }
 
 }
