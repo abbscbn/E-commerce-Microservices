@@ -4,8 +4,9 @@ import com.abbas.ecommerce.common.response.RootResponse;
 import com.abbas.ecommerce.product.dto.RequestProduct;
 import com.abbas.ecommerce.product.dto.ResponseProduct;
 import com.abbas.ecommerce.product.services.ProductService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
@@ -59,6 +60,16 @@ public class ProductController {
         List<ResponseProduct> allProducts = productService.getAllProducts();
         return ResponseEntity.ok(RootResponse.ok(allProducts, webRequest));
     }
+
+    @GetMapping("/getpageable")
+    public ResponseEntity<RootResponse<Page<ResponseProduct>>> getAllProductsWithPageable(Pageable pageable, WebRequest webRequest) {
+        Page<ResponseProduct> allProductsWithPageable = productService.getAllProductsWithPageable(pageable);
+        return ResponseEntity.ok(RootResponse.ok(allProductsWithPageable, webRequest));
+    }
+
+
+
+
 
 
 }

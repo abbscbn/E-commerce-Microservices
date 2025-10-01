@@ -14,6 +14,8 @@ import com.cloudinary.utils.ObjectUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -135,13 +137,26 @@ public class ProductService {
     }
 
     public ResponseProduct getProductByProductId(Long productId) {
-        ResponseProduct responseProduct = new ResponseProduct();
         Optional<Product> optProduct = productRepository.findById(productId);
         if (optProduct.isEmpty()) {
             throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND, productId.toString()));
         }
+
         Product product = optProduct.get();
+        ResponseProduct responseProduct = new ResponseProduct();
         BeanUtils.copyProperties(product, responseProduct);
+
+        // Görselleri set et
+        if (product.getImage() != null) {
+            ResponseProductImage imageDTO = ResponseProductImage.builder()
+                    .desktopUrl(product.getImage().getDesktopUrl())
+                    .tabletUrl(product.getImage().getTabletUrl())
+                    .mobileUrl(product.getImage().getMobileUrl())
+                    .isMain(product.getImage().isMain())
+                    .build();
+            responseProduct.setImage(imageDTO);
+        }
+
         return responseProduct;
     }
 
@@ -149,15 +164,47 @@ public class ProductService {
         List<ResponseProduct> responseProducts = new ArrayList<>();
 
         for (Product p : productRepository.findAll()) {
-
             ResponseProduct responseProduct = new ResponseProduct();
             BeanUtils.copyProperties(p, responseProduct);
 
+            // Görselleri set et
+            if (p.getImage() != null) {
+                ResponseProductImage imageDTO = ResponseProductImage.builder()
+                        .desktopUrl(p.getImage().getDesktopUrl())
+                        .tabletUrl(p.getImage().getTabletUrl())
+                        .mobileUrl(p.getImage().getMobileUrl())
+                        .isMain(p.getImage().isMain())
+                        .build();
+                responseProduct.setImage(imageDTO);
+            }
+
             responseProducts.add(responseProduct);
         }
-        return responseProducts;
 
+        return responseProducts;
     }
+
+    public Page<ResponseProduct> getAllProductsWithPageable(Pageable pageable){
+        Page<Product> productsPage = productRepository.findAll(pageable);
+
+        return productsPage.map(p -> {
+            ResponseProduct responseProduct = new ResponseProduct();
+            BeanUtils.copyProperties(p, responseProduct);
+
+            if (p.getImage() != null) {
+                ResponseProductImage imageDTO = ResponseProductImage.builder()
+                        .desktopUrl(p.getImage().getDesktopUrl())
+                        .tabletUrl(p.getImage().getTabletUrl())
+                        .mobileUrl(p.getImage().getMobileUrl())
+                        .isMain(p.getImage().isMain())
+                        .build();
+                responseProduct.setImage(imageDTO);
+            }
+
+            return responseProduct;
+        });
+    }
+
 
 
     public CheckProductModel checkProduct(Long productId, Integer quality) {
