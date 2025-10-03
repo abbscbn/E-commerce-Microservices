@@ -18,6 +18,9 @@ public class OrderBasketItem {
 
     private Long productId; // product servisten gelen product id
     private int quantity;
+    private Double price;
+    private String name;
+    private String productImgUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "basket_id")
