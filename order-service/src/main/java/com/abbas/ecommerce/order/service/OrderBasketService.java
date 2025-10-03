@@ -87,5 +87,20 @@ public class OrderBasketService {
 
         return "Silme başarılı";
     }
+    @Transactional
+    public String deleteBasketByUserId(Long userId) {
+        Optional<OrderBasket> basketOpt = basketRepository.findByUserId(userId);
+
+        if (basketOpt.isEmpty()) {
+            throw new BaseException(
+                    new ErrorMessage(ErrorMessageType.ORDER_BASKET_NOT_FOUND_BY_USERID, userId.toString())
+            );
+        }
+        System.out.println("if e girmedi silmeye hazırlanıyor...");
+        basketRepository.deleteByUserId(userId);
+        return "Kullanıcıya ait sepet başarıyla silindi.";
+    }
+
+
 
 }

@@ -10,4 +10,9 @@ import java.util.Optional;
 public interface OrderBasketRepository extends JpaRepository<OrderBasket,Long> {
 
     Optional<OrderBasket> findByUserId(Long userId);
+
+
+    void deleteByUserId(Long userId); // <-- yeni ekleme
+
+
 }

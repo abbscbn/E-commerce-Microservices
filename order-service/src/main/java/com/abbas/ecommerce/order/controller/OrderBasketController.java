@@ -47,5 +47,12 @@ public class OrderBasketController {
        return ResponseEntity.ok(RootResponse.ok(orderBasketService.deleteBasket(id),webRequest));
     }
 
+    @DeleteMapping("/deleteuserid/{userId}")
+    public ResponseEntity<RootResponse<String>> deleteBasketByUserId(@PathVariable Long userId, WebRequest webRequest){
+        return ResponseEntity.ok(RootResponse.ok(orderBasketService.deleteBasketByUserId(userId),webRequest));
+    }
+
+
+
 
 }
