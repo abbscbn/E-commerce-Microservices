@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -22,6 +23,26 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+
+        // Preflight isteklere izin ver
+        if ("OPTIONS".equalsIgnoreCase(method)) return true;
+
+        // public izin verilen yollar
+        if (PATH_MATCHER.match("/products/get", path)
+                || PATH_MATCHER.match("/products/getpageable", path)
+                || PATH_MATCHER.match("/products/get/*", path)) { // tek segmentli id için
+            return true;
+        }
+
+        return false;
+    }
 
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;

@@ -38,7 +38,7 @@ public class OrderBasketService {
         Optional<OrderBasket> optOrderBasket = basketRepository.findByUserId(userId);
 
         if(optOrderBasket.isEmpty()){
-            throw new RuntimeException("UserId ye ait Order bulunamadı");
+            throw new BaseException(new ErrorMessage(ErrorMessageType.ORDER_BASKET_NOT_FOUND_BY_USERID,""));
         }
 
         return optOrderBasket.get();

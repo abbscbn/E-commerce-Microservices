@@ -39,7 +39,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(authz -> authz
+                        // herkese açık (public) endpointler
+                        .requestMatchers("/products/get", "/products/get/*", "/products/getpageable").permitAll()
+
+                        // geri kalan tüm /products/** endpointleri auth ister
                         .requestMatchers("/products/**").authenticated()
+
+                        // diğer her şey serbest
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
