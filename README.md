@@ -1,145 +1,182 @@
-# 🛒 E-commerce Microservices
+# 🛍️ E-Commerce Backend (Microservice Architecture)
 
-Bu proje, **Spring Boot** tabanlı mikroservis mimarisi ile geliştirilmiş bir e-ticaret uygulamasıdır.  
-Her servis bağımsız olarak çalışır ve **RabbitMQ** üzerinden event-driven iletişim sağlar.  
-Ayrıca bir `common-lib` modülü ile servisler arası ortak DTO ve Event yapıları paylaşılır.
+Bu proje, Spring Boot ve mikroservis mimarisi kullanılarak geliştirilmiş bir **e-ticaret backend** uygulamasıdır.  
+Kullanıcı kimlik doğrulama, ürün yönetimi ve sipariş işlemleri bağımsız servisler olarak tasarlanmıştır.  
+Tüm servisler PostgreSQL veritabanlarını kullanır ve birbirleriyle **RabbitMQ** mesaj kuyruğu üzerinden iletişim kurar.
 
-## 📂 Proje Yapısı
+---
 
-```plaintext
-E-commerce-Microservices/
-│── common-lib/           → Ortak DTO ve Event sınıfları (OrderCreatedEvent vb.)
-│── identity-service/     → Kullanıcı yönetimi (Register, Login, Roles, JWT, Redis)
-│── product-service/      → Ürün yönetimi (CRUD, Security, Stok kontrolü)
-│── order-service/        → Sipariş yönetimi (CRUD, Event publishing)
-│── pom.xml               → Parent Maven pom
-│── README.md             → Bu dosya
+## 🧩 Mimarinin Genel Yapısı
+
+Proje toplamda **1 ortak modül** ve **3 bağımsız servis**ten oluşur:
+
+### 1. `common-lib` (Ortak Kütüphane Modülü)
+Tüm servisler tarafından kullanılan ortak yapıları barındırır.  
+Aşağıdaki paketlerden oluşur:
+- `dto`
+- `event`
+- `exception`
+- `handler`
+- `response`
+
+#### 🧱 RootResponse Yapısı
+Tüm servislerin frontend’e döndüğü yanıtlar, `RootResponse<T>` generic yapısı üzerinden standartlaştırılmıştır.
+
+**Amaç:**  
+Hatalar, başarılı/başarısız sonuçlar, path bilgisi, host adı, timestamp ve hata detaylarını tek tip JSON formatında sunmaktır.
+
+Örnek başarılı yanıt:
+```json
+{
+  "result": true,
+  "status": 200,
+  "path": "/api/products",
+  "hostName": "local",
+  "localDateTime": "2025-10-01T12:34:56",
+  "data": { ... }
+}
 ```
 
 ---
 
-## 🔑 Identity Service
+### 2. `identity-service`
+Kullanıcı kayıt, giriş ve çıkış işlemlerini yöneten servistir.
 
-Identity Service, kullanıcı yönetimini sağlar.
-- Kullanıcı kayıt (Register)
-- Kullanıcı girişi (Login)
-- Rol yönetimi (`USER , ADMIN`)
-- JWT tabanlı Authentication
-- Redis ile token blacklist (Logout)
+#### 🔐 Özellikler:
+- JWT tabanlı kimlik doğrulama
+- Token içerikleri: `username`, `roles`, `issuedAt`, `expiration`
+- Redis tabanlı **token blacklisting (logout sonrası engelleme)**
+- Uygulama başlatıldığında otomatik **Admin kullanıcısı** oluşturulur.
+- Yeni kayıt olan kullanıcılar `USER` rolüyle kaydedilir.
+- Token kontrolleri her serviste yapılır:
+   - `null` token
+   - `expired` token
+   - `invalid` token
 
-### 📦 Kullanılan Teknolojiler
-- **Java 17**
-- **Spring Boot 3**
-- **Spring Data JPA (Hibernate)**
-- **Spring Validation**
-- **Spring Web**
-- **Spring Security (JWT)**
-- **PostgreSQL**
-- **Redis**
+Bu hatalar `RootResponse` yapısıyla kullanıcıya bildirilir.
 
-
-### 📌 Model
-- `User`: id, username, email, password, roles
-- `Role`: `USER`, `ADMIN`
-
-### 📌 DTO’lar
-- `RegisterRequest`
-- `LoginRequest`
-- `AuthResponse`
----
-
-## 📦 Product Service
-
-Product Service, ürün CRUD işlemlerini yönetir ve sipariş event’lerini dinler. Jwt token ile erişim vardır
-
-### 📌 Özellikler
-- Ürün ekleme, güncelleme, silme, listeleme
-- JWT doğrulama ve rol bazlı güvenlik
-- Redis ile token blacklist kontrolü
-- RESTful API mimarisi
-- RabbitMQ ile OrderCreatedEvent dinleme
-- Stok kontrolü ve ürün rezervasyonu
-
-### 📌 Model
-- `Product`: id, name, description, price, stock
+#### 👤 User Entity
+Her kullanıcı `username`, `email`, `password` ve `roles` alanlarını içerir.  
+Roller `USER` ve `ADMIN` olarak tanımlanmıştır.
 
 ---
 
-## ⚙️ Çalıştırma
+### 3. `product-service`
+Ürün oluşturma, güncelleme, silme ve listeleme işlemlerini yönetir.
 
-1. PostgreSQL’de servisler için ayrı veritabanları oluşturun.  
-   (Örn: `identity_db`, `product_db`)
-2. `application.properties` veya `application.yml` dosyalarında bağlantı ayarlarını yapın.
-3. Redis sunucusunu başlatın (token blacklist için).
-4. Servisleri başlatın:
+#### 📦 Özellikler:
+- `GET` işlemleri haricindeki tüm endpointler token doğrulaması ister.
+- Ürün ve ürün görselleri `Product` ve `ProductImage` entity’leriyle ilişkilidir.
+- Her ürünün tek bir görseli bulunur (`@OneToOne` ilişki).
+
+---
+
+### 4. `order-service`
+Kullanıcıların sepet işlemleri ve sipariş oluşturma süreçlerini yönetir.
+
+#### 🛒 Sepet (OrderBasket)
+Kullanıcı bazlı sepet kayıtlarını tutar.  
+Sepetteki ürünler `OrderBasketItem` entity’sinde tutulur.
+
+#### 🧾 Sipariş (Order)
+- Sipariş oluşturulduğunda `status = PENDING` olarak başlar.
+- `RabbitMQ` üzerinden `identity-service` ve `product-service`’e mesaj gönderilir:
+   - Kullanıcı doğrulaması
+   - Ürün stok kontrolü
+- Eğer her iki servis de onay dönerse:
+   - `status = CONFIRMED`
+- Eğer bir servis hata dönerse:
+   - `status = FAILED`
+- Hatalı mesajlar `FailedMessage` tablosunda saklanır.
+
+---
+
+## ⚙️ Kullanılan Teknolojiler
+
+| Teknoloji | Açıklama |
+|------------|-----------|
+| **Spring Boot** | Servislerin temel çatısı |
+| **Spring Data JPA (Hibernate)** | ORM ve veritabanı yönetimi |
+| **Spring Security** | Kimlik doğrulama ve rol yönetimi |
+| **Redis** | Token blacklisting için cache yapısı |
+| **RabbitMQ** | Servisler arası iletişim için mesaj kuyruğu |
+| **PostgreSQL** | Her servis için ayrı veritabanı |
+| **Lombok** | Boilerplate kodların azaltılması |
+| **Jakarta Validation** | Veri doğrulama işlemleri |
+
+---
+
+## 🏗️ Projeyi Çalıştırma
+
+### Gereksinimler
+- Java 17+
+- Maven
+- PostgreSQL
+- Redis
+- RabbitMQ
+
+### Adımlar
+1. Her servis için `.env` veya `application.yml` dosyalarında bağlantı bilgilerini düzenle:
+   ```yaml
+   spring:
+     datasource:
+       url: jdbc:postgresql://localhost:5432/identity_db
+       username: postgres
+       password: your_password
+   ```
+2. Ortak modülü (`common-lib`) build et:
    ```bash
+   cd common-lib
+   mvn clean install
+   ```
+3. Servisleri sırasıyla çalıştır:
+   ```bash
+   cd identity-service
+   mvn spring-boot:run
+   cd ../product-service
+   mvn spring-boot:run
+   cd ../order-service
    mvn spring-boot:run
    ```
 
 ---
 
-## 📦 Order Service
+## 🌐 Servislerin Default Portları
 
-Order Service, sipariş yönetimi ve event publishing işlemlerini sağlar.
-
-### Özellikler
-- Sipariş oluşturma (`createOrder`) ve listeleme
-- `OrderItem` ile ürün ilişkisi
-- RabbitMQ ile `OrderCreatedEvent` yayınlama
-- RESTful API
-
-### Model
-- **Order**: `id`, `userId`, `totalPrice`, `status`, `items`
-- **OrderItem**: `id`, `productId`, `quantity`, `price`, `order`
-
-
-## 📦 Common Lib
-
-Ortak kullanılan event ve DTO sınıfları:
-
-- `OrderCreatedEvent`
-- `OrderCreatedEvent.OrderItemDto`
+| Servis | Port | Açıklama |
+|--------|------|-----------|
+| common-lib | (kütüphane modülü) | bağımsız çalışmaz |
+| identity-service | 8081 | Kullanıcı yönetimi ve JWT işlemleri |
+| product-service | 8082 | Ürün CRUD işlemleri |
+| order-service | 8083 | Sipariş ve sepet yönetimi |
 
 ---
 
-## ⚙️ RabbitMQ
-
-Docker üzerinden çalıştırılabilir:
-
-```bash
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+## 📡 İletişim Akışı (RabbitMQ)
 ```
-
-- `Order Service: OrderCreatedEvent publish`
-
-- `Product Service: OrderCreatedEvent listen`
-
-## ⚙️ Çalıştırma
-
-1. PostgreSQL’de servisler için ayrı veritabanları oluşturun.  
-   (Örn: `identity_db`, `product_db`, `order_db`)
-
-2. `application.properties` veya `application.yml` dosyalarında bağlantı ayarlarını yapın.
-
-3. Redis sunucusunu başlatın (token blacklist için).
-
-4. RabbitMQ sunucusunu Docker ile çalıştırın.
-
-```bash
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+order-service  →  identity-service  ✅ Kullanıcı doğrulama
+order-service  →  product-service   ✅ Stok kontrolü
 ```
+Duruma göre siparişin `status` değeri güncellenir (`CONFIRMED` / `FAILED`).
 
-## 🚀 Servisleri Başlatma
+---
 
-Servisleri başlatmak için her bir servis dizininde şu komutu çalıştırın:
+## 🧰 Geliştirici Notları
+- Tüm exception’lar `common-lib` altındaki global handler tarafından yakalanır.
+- Frontend’e dönen tüm yanıtlar `RootResponse` formatındadır.
+- Modüler mimari sayesinde yeni servis eklemek oldukça kolaydır.
+- Her servis kendi `application.yml` dosyasında ayrı PostgreSQL bağlantısı kullanır.
 
-```bash
-mvn spring-boot:run
-```
+---
 
-## 📌 Planlanan Servisler
+## 🚀 Gelecekte Planlanan Geliştirmeler
+- Mail doğrulama sistemi
+- Ürün yorum sistemi
+- Sipariş geçmişi için kullanıcı paneli
+- Prometheus & Grafana ile servis monitoring
 
-- **Identity Service** ✅
-- **Product Service** ✅
-- **Order Service** ✅
-- **Common Lib** ✅
+---
+
+## 👨‍💻 Geliştirici
+**Abbas Çoban**  
+Full-Stack Developer (Spring Boot / React / PostgreSQL)
