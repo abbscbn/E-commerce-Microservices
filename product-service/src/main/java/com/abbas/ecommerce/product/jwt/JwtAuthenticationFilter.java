@@ -7,7 +7,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -86,12 +85,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (AuthBaseException e) {
             SecurityContextHolder.clearContext();
-            // EntryPoint'i direkt çağırıyoruz
             jwtAuthenticationEntryPoint.commence(request, response, e);
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
             jwtAuthenticationEntryPoint.commence(request, response,
-                    new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, authHeader)));
+                    new AuthBaseException(new ErrorMessage(ErrorMessageType.TOKEN_IS_NOT_VALID, e.getMessage())));
         }
     }
 }
