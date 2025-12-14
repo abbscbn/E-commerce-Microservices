@@ -206,39 +206,6 @@ public class ProductService {
     }
 
 
-
-    public CheckProductModel checkProduct(Long productId, Integer quality) {
-
-        CheckProductModel checkProductModel = new CheckProductModel();
-        Optional<Product> optProduct = productRepository.findById(productId);
-
-        try {
-            if (optProduct.isEmpty()) {
-                throw new BaseException(new ErrorMessage(ErrorMessageType.PRODUCT_NOT_FOUND, productId.toString()));
-
-            } else {
-
-                if (optProduct.get().getStock() - quality >= 0) {
-                    checkProductModel.setCheck(true);
-                    checkProductModel.setDesc(null);
-                    return checkProductModel;
-
-                } else {
-                    checkProductModel.setCheck(false);
-                    checkProductModel.setDesc("STOK YETERSİZ MEVCUT MİKTAR: " + optProduct.get().getStock());
-                    return checkProductModel;
-                }
-
-            }
-        } catch (BaseException e) {
-            checkProductModel.setCheck(false);
-            checkProductModel.setDesc("İLGİLİ PRODUCT ID BULUNAMADI PRODUCTID: : " + productId.toString());
-
-            return checkProductModel;
-        }
-
-    }
-
     public void setProductStockByProductId(Long productId, Integer quality) {
         Optional<Product> optProduct = productRepository.findById(productId);
 
